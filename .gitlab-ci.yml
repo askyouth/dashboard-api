@@ -1,0 +1,20 @@
+image: node:4.5
+
+services:
+  - postgres:9.5
+
+variables:
+  POSTGRES_DB: db
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: ""
+
+cache:
+  paths:
+    - node_modules/
+
+before_script:
+  - npm install
+
+test:
+  script:
+    - DATABASE_URL="postgres://postgres@postgres/db" npm test
