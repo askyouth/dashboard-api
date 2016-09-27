@@ -117,6 +117,20 @@ lab.experiment('Handles result list', () => {
       Code.expect(result[0].uid).to.equal(handles[1].uid)
     })
   })
+
+  lab.test('it returns array of document with related fields', () => {
+    let request = {
+      method: 'GET',
+      url: '/handles?related=["topics"]'
+    }
+
+    return server.inject(request).then((response) => {
+      Code.expect(response.statusCode).to.equal(200)
+      let result = JSON.parse(response.payload)
+      Code.expect(result).to.be.an.array().and.have.length(2)
+      Code.expect(result[0].topics).to.be.an.array().and.have.length(2)
+    })
+  })
 })
 
 lab.experiment('Handles create', () => {

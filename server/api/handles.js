@@ -45,17 +45,20 @@ internals.applyRoutes = (server, next) => {
       validate: {
         query: {
           page: Joi.number().integer().default(1),
-          pageSize: Joi.number().integer().default(20)
+          pageSize: Joi.number().integer().default(20),
+          related: Joi.array().items(Joi.string().allow(['topics'])).default([])
         }
       }
     },
     handler (request, reply) {
-      let pageSize = request.query.pageSize
       let page = request.query.page
+      let pageSize = request.query.pageSize
+      let related = request.query.related
 
       let handles = Handle.fetchPage({
+        page: page,
         pageSize: pageSize,
-        page: page
+        withRelated: related
       })
 
       reply(handles)
