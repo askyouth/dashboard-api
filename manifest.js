@@ -77,6 +77,19 @@ const manifest = {
                   'visibility', 'bookshelf-json-columns']
       }
     }
+  }, {
+    plugin: './server/errors'
+  }, {
+    plugin: './server/api/handles'
+  }, {
+    plugin: './server/api/topics'
+  }, {
+    plugin: {
+      register: './server/services/twitter',
+      options: {
+        auth: Config.getp('twitter')
+      }
+    }
   }]
 }
 
