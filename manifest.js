@@ -28,6 +28,9 @@ const manifest = {
     port: Config.get('connection.api.port'),
     uri: Config.get('connection.api.uri'),
     labels: ['api'],
+    routes: {
+      cors: true
+    },
     router: {
       stripTrailingSlash: true
     }
