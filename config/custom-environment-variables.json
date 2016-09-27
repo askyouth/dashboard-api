@@ -1,0 +1,8 @@
+{
+  "connection": {
+    "api": {
+      "port": "PORT",
+      "uri": "CONNECTION_API_URI"
+    }
+  }
+}

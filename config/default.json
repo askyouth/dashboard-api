@@ -1,0 +1,8 @@
+{
+  "connection": {
+    "api": {
+      "port": 4000,
+      "uri": "http://ask-dashboard.com"
+    }
+  }
+}

@@ -1,13 +1,20 @@
 'use strict'
 
 // Module dependencies.
+const Config = require('config')
 const Confidence = require('confidence')
 
-let criteria = {
+// hack to return POJO
+const proto = Object.getPrototypeOf(Config)
+proto.getp = function (path) {
+  return JSON.parse(JSON.stringify(this.get(path)))
+}
+
+const criteria = {
   env: process.env.NODE_ENV
 }
 
-let manifest = {
+const manifest = {
   $meta: 'This file defines dashboard server.',
   server: {
     debug: {
@@ -18,8 +25,8 @@ let manifest = {
     }
   },
   connections: [{
-    port: process.env.PORT || 4000,
-    uri: process.env.API_URI,
+    port: Config.get('connection.api.port'),
+    uri: Config.get('connection.api.uri'),
     labels: ['api'],
     router: {
       stripTrailingSlash: true
@@ -62,7 +69,7 @@ let manifest = {
   }]
 }
 
-let store = new Confidence.Store(manifest)
+const store = new Confidence.Store(manifest)
 
 exports.get = (key) => store.get(key, criteria)
 exports.meta = (key) => store.meta(key, criteria)

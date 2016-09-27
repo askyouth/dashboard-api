@@ -1,0 +1,7 @@
+{
+  "connection": {
+    "api": {
+      "uri": "http://ask-dashboard.local"
+    }
+  }
+}

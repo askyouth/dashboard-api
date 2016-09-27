@@ -1,8 +1,8 @@
 'use strict'
 
 // Module dependencies.
-const Code = require('code')
 const Lab = require('lab')
+const Code = require('code')
 const Manifest = require('../manifest')
 
 const lab = exports.lab = Lab.script()
