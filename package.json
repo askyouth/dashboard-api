@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "node server.js",
+    "setup": "./node_modules/.bin/knex migrate:latest",
     "test": "NODE_ENV=test ./node_modules/.bin/lab -c"
   },
   "repository": {
@@ -21,6 +22,9 @@
   "author": "UX Passion (http://uxpassion.com)",
   "license": "ISC",
   "dependencies": {
+    "bluebird": "^3.4.6",
+    "bookshelf": "^0.10.1",
+    "bookshelf-json-columns": "^1.2.2",
     "confidence": "^3.0.1",
     "config": "^1.21.0",
     "glue": "^4.0.0",
@@ -30,7 +34,10 @@
     "hapi": "^15.0.3",
     "inert": "^4.0.2",
     "joi": "^9.0.4",
+    "knex": "^0.12.1",
+    "lodash": "^4.15.0",
     "lout": "^9.1.0",
+    "pg": "^6.1.0",
     "tv": "^5.0.2",
     "vision": "^4.1.0"
   },

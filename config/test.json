@@ -1,1 +1,13 @@
-{}
+{
+  "database": {
+    "knex": {
+      "connection": {
+        "host": "localhost",
+        "user": "postgres",
+        "password": "postgres",
+        "database": "ask_dashboard_test",
+        "port": 5432
+      }
+    }
+  }
+}

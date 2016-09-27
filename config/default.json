@@ -4,5 +4,29 @@
       "port": 4000,
       "uri": "http://ask-dashboard.com"
     }
+  },
+  "database": {
+    "knex": {
+      "client": "pg",
+      "connection": {
+        "host": "localhost",
+        "user": "postgres",
+        "password": "postgres",
+        "database": "ask_dashboard_dev",
+        "port": 5432,
+        "charset": "utf8"
+      },
+      "pool": {
+        "min": 2,
+        "max": 10
+      },
+      "migrations": {
+        "tableName": "migrations",
+        "directory": "./server/database/migrations"
+      },
+      "seeds": {
+        "directory": "./server/database/seeds"
+      }
+    }
   }
 }
