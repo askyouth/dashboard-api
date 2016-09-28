@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node server.js",
     "setup": "./node_modules/.bin/knex migrate:latest",
-    "test": "NODE_ENV=test ./node_modules/.bin/lab -c"
+    "test": "NODE_ENV=test ./node_modules/.bin/lab -v -c -t 90"
   },
   "repository": {
     "type": "git",
