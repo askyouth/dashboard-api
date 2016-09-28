@@ -41,5 +41,31 @@ module.exports = (bookshelf) => bookshelf.Model.extend({
     return Promise.fromCallback((cb) => {
       Joi.validate(this.attributes, this.schema, { stripUnknown: true }, cb)
     })
+  },
+
+  serialize (options) {
+    options || (options = {})
+
+    let object = bookshelf.Model.prototype.serialize.apply(this, arguments)
+
+    if (!this.flatten ||
+      (typeof options.shallow !== 'undefined' && options.shallow) ||
+      (typeof options.flatten !== 'undefined' && !options.flatten)) {
+      return object
+    }
+
+    Object.keys(this.flatten).forEach((name) => {
+      let value = this.flatten[name]
+      let relation = this.relations[name]
+      if (relation) {
+        if (typeof relation.length !== 'undefined') {
+          object[name] = relation.pluck(value)
+        } else {
+          object[name] = relation[Array.isArray(value) ? 'pick' : 'get'](value)
+        }
+      }
+    })
+
+    return object
   }
 })
