@@ -274,6 +274,9 @@ lab.experiment('Handle attach topic', () => {
 
     return server.inject(request).then((response) => {
       Code.expect(response.statusCode).to.equal(200)
+      let result = JSON.parse(response.payload)
+      Code.expect(result).to.be.an.object()
+      Code.expect(result.name).to.equal(topics[1].name)
       return db('handle_topic').where({ handle_id: 2 }).select()
     }).then((handleTopics) => {
       Code.expect(handleTopics).to.be.an.array().and.have.length(2)

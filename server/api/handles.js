@@ -217,7 +217,7 @@ internals.applyRoutes = (server, next) => {
       let handle = request.pre.handle
       let topic = request.pre.topic
 
-      topic = handle.topics().attach(topic)
+      topic = handle.topics().attach(topic).return(topic)
 
       reply(topic)
     }
