@@ -31,8 +31,13 @@ function initServer (plugins) {
 }
 
 const handles = [
-  { uid: '123', username: 'test1', name: 'Test One', profile: {} },
-  { uid: '456', username: 'test2', name: 'Test Two', profile: {} }
+  { uid: '123', username: 'test1', name: 'Test One', camp_id: null, profile: {} },
+  { uid: '456', username: 'test2', name: 'Test Two', camp_id: null, profile: {} }
+]
+
+const camps = [
+  { name: 'Youth' },
+  { name: 'Policy maker' }
 ]
 
 const topics = [
@@ -44,6 +49,12 @@ const topics = [
 function initDatabase () {
   db = Knex(Config.get('database.knex'))
   return db.migrate.latest().then(() => {
+    return db('camp').insert(camps).returning('id')
+  }).then((campIds) => {
+    camps[0].id = campIds[0]
+    camps[1].id = campIds[1]
+    handles[0].camp_id = campIds[0]
+    handles[1].camp_id = campIds[1]
     return Promise.all([
       db('handle').insert(handles).returning('id'),
       db('topic').insert(topics).returning('id')
@@ -101,6 +112,7 @@ lab.experiment('Handles result list', () => {
       let result = JSON.parse(response.payload)
       Code.expect(result).to.be.an.array().and.have.length(2)
       Code.expect(result[0].uid).to.equal(handles[0].uid)
+      Code.expect(result[0].camp).to.be.an.object().and.equal(camps[0])
     })
   })
 
@@ -136,7 +148,8 @@ lab.experiment('Handles result list', () => {
 lab.experiment('Handles create', () => {
   lab.test('it creates new handle successfully', () => {
     let handle = {
-      username: 'djelich'
+      username: 'djelich',
+      camp_id: camps[0].id
     }
     let request = {
       method: 'POST',
@@ -151,6 +164,7 @@ lab.experiment('Handles create', () => {
     }).then((handles) => {
       Code.expect(handles).to.be.an.array().and.have.length(1)
       Code.expect(handles[0].username).to.equal(handle.username)
+      Code.expect(handles[0].camp_id).to.equal(camps[0].id)
     })
   })
 })
@@ -167,6 +181,7 @@ lab.experiment('Handle get', () => {
       let result = JSON.parse(response.payload)
       Code.expect(result.uid).to.equal(handles[0].uid)
       Code.expect(result.username).to.equal(handles[0].username)
+      Code.expect(result.camp).to.equal(camps[0])
     })
   })
 

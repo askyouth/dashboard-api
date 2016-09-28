@@ -18,6 +18,14 @@ module.exports = (BaseModel, bookshelf) => BaseModel.extend({
     camp_id: Joi.number().integer().allow(null)
   },
 
+  flatten: {
+    camp: ['id', 'name']
+  },
+
+  camp () {
+    return this.belongsTo('Camp')
+  },
+
   topics () {
     return this.belongsToMany('Topic', 'handle_topic')
   }

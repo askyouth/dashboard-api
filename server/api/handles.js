@@ -53,7 +53,7 @@ internals.applyRoutes = (server, next) => {
     handler (request, reply) {
       let page = request.query.page
       let pageSize = request.query.pageSize
-      let related = request.query.related
+      let related = ['camp'].concat(request.query.related)
 
       let handles = Handle.fetchPage({
         page: page,
@@ -72,12 +72,14 @@ internals.applyRoutes = (server, next) => {
       description: 'Create new handle',
       validate: {
         payload: {
-          username: Joi.string().required()
+          username: Joi.string().required(),
+          camp_id: Joi.number().integer()
         }
       }
     },
     handler (request, reply) {
       let username = request.payload.username
+      let campId = request.payload.camp_id
 
       let options = {
         screen_name: username,
@@ -91,9 +93,10 @@ internals.applyRoutes = (server, next) => {
           profile: {
             image: profile.profile_image_url_https,
             description: profile.description
-          }
+          },
+          camp_id: campId
         }).save())
-        .then((handle) => handle.fetch())
+        .then((handle) => handle.fetch({ withRelated: ['camp'] }))
 
       reply(handle)
     }
@@ -118,7 +121,7 @@ internals.applyRoutes = (server, next) => {
     },
     handler (request, reply) {
       let handle = request.pre.handle
-      let related = request.query.related
+      let related = ['camp'].concat(request.query.related)
 
       if (related.length) {
         handle = handle.load(related)
@@ -136,6 +139,13 @@ internals.applyRoutes = (server, next) => {
       validate: {
         params: {
           handleId: Joi.number().integer().required()
+        },
+        payload: {
+          uid: Joi.string(),
+          name: Joi.string(),
+          username: Joi.string(),
+          profile: Joi.object(),
+          camp_id: Joi.number().integer()
         }
       },
       pre: [{
@@ -147,6 +157,7 @@ internals.applyRoutes = (server, next) => {
       let handle = request.pre.handle
 
       handle = handle.save(payload)
+        .then((handle) => handle.fetch({ withRelated: ['camp'] }))
 
       reply(handle)
     }
