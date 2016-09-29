@@ -239,6 +239,27 @@ lab.experiment('Handles create', () => {
       Code.expect(handles[0].camp_id).to.equal(camps[0].id)
     })
   })
+
+  lab.test('it creates new handle without camp successfully', () => {
+    let handle = {
+      username: 'twitterapi'
+    }
+    let request = {
+      method: 'POST',
+      url: '/handles',
+      payload: handle
+    }
+
+    return server.inject(request).then((response) => {
+      Code.expect(response.statusCode).to.equal(200)
+      let result = JSON.parse(response.payload)
+      return db('handle').where({ id: result.id }).select()
+    }).then((handles) => {
+      Code.expect(handles).to.be.an.array().and.have.length(1)
+      Code.expect(handles[0].username).to.equal(handle.username)
+      Code.expect(handles[0].camp_id).to.equal(null)
+    })
+  })
 })
 
 lab.experiment('Handle get', () => {

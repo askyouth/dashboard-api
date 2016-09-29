@@ -117,7 +117,7 @@ internals.applyRoutes = (server, next) => {
           },
           camp_id: campId
         }).save())
-        .then((handle) => handle.fetch({ withRelated: ['camp'] }))
+        .then((handle) => handle.refresh({ withRelated: ['camp'] }))
 
       reply(handle)
     }
@@ -178,7 +178,7 @@ internals.applyRoutes = (server, next) => {
       let handle = request.pre.handle
 
       handle = handle.save(payload)
-        .then((handle) => handle.fetch({ withRelated: ['camp'] }))
+        .then((handle) => handle.refresh({ withRelated: ['camp'] }))
 
       reply(handle)
     }
