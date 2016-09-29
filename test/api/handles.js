@@ -31,8 +31,8 @@ function initServer (plugins) {
 }
 
 const handles = [
-  { uid: '123', username: 'test1', name: 'Test One', camp_id: null, profile: {} },
-  { uid: '456', username: 'test2', name: 'Test Two', camp_id: null, profile: {} }
+  { uid: '123', username: 'test1', name: 'Test One', camp_id: null, profile: {}, created_at: new Date() },
+  { uid: '456', username: 'test2', name: 'Test Two', camp_id: null, profile: {}, created_at: new Date('2000-01-01') }
 ]
 
 const camps = [
@@ -141,6 +141,78 @@ lab.experiment('Handles result list', () => {
       let result = JSON.parse(response.payload)
       Code.expect(result).to.be.an.array().and.have.length(2)
       Code.expect(result[0].topics).to.be.an.array().and.have.length(2)
+    })
+  })
+
+  lab.test('it returns array of documents filtered by camp', () => {
+    let request = {
+      method: 'GET',
+      url: `/handles?filter={"camp":${camps[0].id}}`
+    }
+
+    return server.inject(request).then((response) => {
+      Code.expect(response.statusCode).to.equal(200)
+      let result = JSON.parse(response.payload)
+      Code.expect(result).to.be.an.array().and.have.length(1)
+      Code.expect(result[0].username).to.equal(handles[0].username)
+    })
+  })
+
+  lab.test('it returns array of documents filtered by topic', () => {
+    let request = {
+      method: 'GET',
+      url: `/handles?filter={"topic":${topics[1].id}}`
+    }
+
+    return server.inject(request).then((response) => {
+      Code.expect(response.statusCode).to.equal(200)
+      let result = JSON.parse(response.payload)
+      Code.expect(result).to.be.an.array().and.have.length(1)
+      Code.expect(result[0].username).to.equal(handles[0].username)
+    })
+  })
+
+  lab.test('it returns array of documents filtered by camp and topic', () => {
+    let request = {
+      method: 'GET',
+      url: `/handles?filter={"camp":${camps[0].id},"topic":${topics[0].id}}`
+    }
+
+    return server.inject(request).then((response) => {
+      Code.expect(response.statusCode).to.equal(200)
+      let result = JSON.parse(response.payload)
+      Code.expect(result).to.be.an.array().and.have.length(1)
+      Code.expect(result[0].username).to.equal(handles[0].username)
+    })
+  })
+
+  lab.test('it returns array of documents sorted by name', () => {
+    let request = {
+      method: 'GET',
+      url: '/handles?sort=name&sortOrder=desc'
+    }
+
+    return server.inject(request).then((response) => {
+      Code.expect(response.statusCode).to.equal(200)
+      let result = JSON.parse(response.payload)
+      Code.expect(result).to.be.an.array().and.have.length(2)
+      Code.expect(result[0].username).to.equal(handles[1].username)
+      Code.expect(result[1].username).to.equal(handles[0].username)
+    })
+  })
+
+  lab.test('it returns array of documents sorted by date created', () => {
+    let request = {
+      method: 'GET',
+      url: '/handles?sort=created_at&sortOrder=asc'
+    }
+
+    return server.inject(request).then((response) => {
+      Code.expect(response.statusCode).to.equal(200)
+      let result = JSON.parse(response.payload)
+      Code.expect(result).to.be.an.array().and.have.length(2)
+      Code.expect(result[0].username).to.equal(handles[1].username)
+      Code.expect(result[1].username).to.equal(handles[0].username)
     })
   })
 })

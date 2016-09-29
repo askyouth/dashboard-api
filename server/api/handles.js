@@ -44,22 +44,43 @@ internals.applyRoutes = (server, next) => {
       description: 'Get list of handles',
       validate: {
         query: {
+          filter: Joi.object({
+            camp: Joi.number().integer(),
+            topic: Joi.number().integer()
+          }).default({}),
           page: Joi.number().integer().default(1),
           pageSize: Joi.number().integer().default(20),
-          related: Joi.array().items(Joi.string().allow(['topics'])).default([])
+          sort: Joi.string().valid(['name', 'created_at']),
+          sortOrder: Joi.string().valid(['asc', 'desc']).default('asc'),
+          related: Joi.array().items(Joi.string().valid(['topics'])).default([])
         }
       }
     },
     handler (request, reply) {
+      let filter = request.query.filter
       let page = request.query.page
       let pageSize = request.query.pageSize
+      let sort = request.query.sort
+      let sortOrder = request.query.sortOrder
       let related = ['camp'].concat(request.query.related)
 
-      let handles = Handle.fetchPage({
-        page: page,
-        pageSize: pageSize,
-        withRelated: related
-      })
+      let handles = Handle
+        .query((qb) => {
+          if (filter.camp) {
+            qb.where('handle.camp_id', '=', filter.camp)
+          }
+          if (filter.topic) {
+            qb.innerJoin('handle_topic', 'handle.id', 'handle_topic.handle_id')
+            qb.groupBy('handle.id')
+            qb.where('handle_topic.topic_id', filter.topic)
+          }
+        })
+        .orderBy(sort, sortOrder)
+        .fetchPage({
+          page: page,
+          pageSize: pageSize,
+          withRelated: related
+        })
 
       reply(handles)
     }
