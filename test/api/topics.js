@@ -195,6 +195,26 @@ lab.experiment('Topic update', () => {
       Code.expect(topics[0].keywords).to.equal(topic.keywords)
     })
   })
+
+  lab.test('it should allow optional fields to be null', () => {
+    let topic = {
+      name: 'Topic y',
+      description: null
+    }
+    let request = {
+      method: 'PUT',
+      url: '/topics/1',
+      payload: topic
+    }
+
+    return server.inject(request).then((response) => {
+      Code.expect(response.statusCode).to.equal(200)
+      return db('topic').where({ id: 1 }).select()
+    }).then((topics) => {
+      Code.expect(topics).to.be.an.array().and.have.length(1)
+      Code.expect(topics[0].description).to.equal(null)
+    })
+  })
 })
 
 lab.experiment('Topic delete', () => {

@@ -104,7 +104,7 @@ internals.applyRoutes = function (server, next) {
         },
         payload: {
           name: Joi.string(),
-          description: Joi.string(),
+          description: Joi.string().allow(null),
           keywords: Joi.array().items(Joi.string())
         }
       },
