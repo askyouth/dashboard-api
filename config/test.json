@@ -9,5 +9,11 @@
         "port": 5432
       }
     }
+  },
+  "twitter": {
+    "consumer_key": "abc",
+    "consumer_secret": "def",
+    "access_token": "ghi",
+    "access_token_secret": "jkl"
   }
 }

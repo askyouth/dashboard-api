@@ -12,6 +12,7 @@ const Errors = require('../../server/errors')
 const Database = require('../../server/database')
 const Twitter = require('../../server/services/twitter')
 const Handles = require('../../server/api/handles')
+const mock = require('../helpers/mock')
 
 const lab = exports.lab = Lab.script()
 let db
@@ -229,6 +230,10 @@ lab.experiment('Handles create', () => {
       payload: handle
     }
 
+    mock.twitterProfile({
+      screen_name: handle.username
+    })
+
     return server.inject(request).then((response) => {
       Code.expect(response.statusCode).to.equal(200)
       let result = JSON.parse(response.payload)
@@ -249,6 +254,11 @@ lab.experiment('Handles create', () => {
       url: '/handles',
       payload: handle
     }
+
+    mock.twitterProfile({
+      id: '' + ~~(Math.random() * 1e6),
+      screen_name: handle.username
+    })
 
     return server.inject(request).then((response) => {
       Code.expect(response.statusCode).to.equal(200)
