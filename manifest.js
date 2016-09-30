@@ -90,7 +90,7 @@ const manifest = {
     plugin: {
       register: './server/services/twitter',
       options: {
-        auth: Config.getp('twitter')
+        auth: Config.getp('twitter.auth')
       }
     }
   }]
