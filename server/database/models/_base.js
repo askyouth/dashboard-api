@@ -9,6 +9,12 @@ const DEFAULT_TIMESTAMP_KEYS = ['created_at', 'updated_at']
 module.exports = (bookshelf) => bookshelf.Model.extend({
   hasTimestamps: true,
 
+  /**
+   * Initializes the model.
+   *
+   * Sets models schema and validation hooks.
+   */
+
   initialize (attrs, options) {
     this.schema = Object.assign(this.baseSchema(), this.schema)
     this.on('saving', (model, attrs, options) => {
@@ -18,6 +24,13 @@ module.exports = (bookshelf) => bookshelf.Model.extend({
     })
     bookshelf.Model.prototype.initialize.apply(this, arguments)
   },
+
+  /**
+   * Generates base schema.
+   *
+   * Base schema includes id attribute
+   * and timestamp fields.
+   */
 
   baseSchema () {
     let schema = {
@@ -37,11 +50,45 @@ module.exports = (bookshelf) => bookshelf.Model.extend({
     return schema
   },
 
+  /**
+   * Validation hook.
+   */
+
   validate () {
     return Promise.fromCallback((cb) => {
       Joi.validate(this.attributes, this.schema, { stripUnknown: true }, cb)
     })
   },
+
+  /**
+   * Parses response from database.
+   *
+   * Ensures that only fields defined in schema
+   * are assigned to attributes. It prevents errors
+   * when saving model previously fetched by
+   * overriding underlying querybuilder.
+   */
+
+  parse (result) {
+    return Object.keys(result).reduce((memo, key) => {
+      if (this.schema[key]) {
+        memo[key] = result[key]
+      }
+      return memo
+    }, {})
+  },
+
+  /**
+   * Serializes model to plain object.
+   *
+   * @param {Object} options Serializer options.
+   * @param {Boolean} [options.shallow=false]
+   *   Do not serialize loaded relations. Defaults to `false`.
+   * @param {Boolean} [options.flatten=true]
+   *   Flatten loaded relations. Defaults to `true`.
+   *
+   * @return {Object} Serialized object.
+   */
 
   serialize (options) {
     options || (options = {})

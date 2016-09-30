@@ -93,6 +93,14 @@ const manifest = {
         auth: Config.getp('twitter.auth')
       }
     }
+  }, {
+    plugin: {
+      register: './server/services/klout',
+      options: {
+        auth: Config.get('klout.auth'),
+        interval: +Config.get('klout.interval')
+      }
+    }
   }]
 }
 

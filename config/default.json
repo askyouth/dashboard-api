@@ -36,5 +36,9 @@
       "access_token":        "1746146112-iTu7vKMwnIc9WsqFms3Iix02fKBNCYMeTJiyN9W",
       "access_token_secret": "NmIvV3RWZHemmWFyYzN9NjOYalwtI7BLeqdPq3yGLcTVH"
     }
+  },
+  "klout": {
+    "auth":     "neng5ns49v7c6fm9cf85ykc8",
+    "interval": 60000
   }
 }

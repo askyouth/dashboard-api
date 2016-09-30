@@ -22,6 +22,7 @@
   "author": "UX Passion (http://uxpassion.com)",
   "license": "ISC",
   "dependencies": {
+    "@uxp/task-runner": "^1.1.1",
     "bluebird": "^3.4.6",
     "bookshelf": "^0.10.1",
     "bookshelf-json-columns": "^1.2.2",
@@ -38,6 +39,7 @@
     "knex": "^0.12.1",
     "lodash": "^4.15.0",
     "lout": "^9.1.0",
+    "node_klout": "^0.3.1",
     "pg": "^6.1.0",
     "tv": "^5.0.2",
     "twit": "^2.2.5",

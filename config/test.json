@@ -17,5 +17,8 @@
       "access_token": "ghi",
       "access_token_secret": "jkl"
     }
+  },
+  "klout": {
+    "auth": "abc"
   }
 }

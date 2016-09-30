@@ -3,11 +3,46 @@
 // Module dependencies.
 const nock = require('nock')
 
+const kloutIdentity = require('./mocks/klout_identity.json')
 const twitterProfile = require('./mocks/twitter_profile.json')
 
 nock.disableNetConnect()
 
 exports = module.exports = nock
+
+exports.kloutIdentity = (user) => {
+  let response = Object.assign({}, kloutIdentity, user)
+
+  return nock('http://api.klout.com:80', { encodedQueryParams: true })
+    .get('/v2/identity.json/twitter')
+    .query({
+      screenName: user.screen_name,
+      key: 'abc'
+    })
+    .reply(200, response, {
+      'content-type': 'application/json; charset=utf-8',
+      'x-mashery-responder': 'prod-j-worker-us-west-1c-59.mashery.com',
+      'x-plan-qps-allotted': '10',
+      'x-plan-qps-current': '1',
+      'x-plan-quota-allotted': '20000',
+      'x-plan-quota-current': '27',
+      'x-plan-quota-reset': 'Saturday, October 1, 2016 12:00:00 AM GMT'
+    })
+}
+
+exports.kloutIdentityNotFound = () => {
+  return nock('http://api.klout.com:80', { encodedQueryParams: true })
+    .get('/v2/identity.json/twitter')
+    .query((query) => true)
+    .reply(404, '', {
+      'x-mashery-responder': 'prod-j-worker-us-west-1b-64.mashery.com',
+      'x-plan-qps-allotted': '10',
+      'x-plan-qps-current': '1',
+      'x-plan-quota-allotted': '20000',
+      'x-plan-quota-current': '35',
+      'x-plan-quota-reset': 'Saturday, October 1, 2016 12:00:00 AM GMT'
+    })
+}
 
 exports.twitterProfile = (user) => {
   let response = Object.assign({}, twitterProfile, user)

@@ -3,13 +3,17 @@
 // Module dependencies.
 const Joi = require('joi')
 const Boom = require('boom')
+const Promise = require('bluebird')
 
 const NotFoundError = Boom.notFound
 const BadRequestError = Boom.badRequest
 
 const internals = {}
 
+internals.dependencies = ['database', 'services/twitter', 'services/klout']
+
 internals.applyRoutes = (server, next) => {
+  const Klout = server.plugins['services/klout']
   const Twitter = server.plugins['services/twitter']
   const Database = server.plugins.database
   const Handle = Database.model('Handle')
@@ -50,7 +54,7 @@ internals.applyRoutes = (server, next) => {
           }).default({}),
           page: Joi.number().integer().default(1),
           pageSize: Joi.number().integer().default(20),
-          sort: Joi.string().valid(['name', 'created_at']).default('name'),
+          sort: Joi.string().valid(['name', 'created_at', 'klout_score']).default('name'),
           sortOrder: Joi.string().valid(['asc', 'desc']).default('asc'),
           related: Joi.array().items(Joi.string().valid(['topics'])).default([])
         }
@@ -102,22 +106,28 @@ internals.applyRoutes = (server, next) => {
       let username = request.payload.username
       let campId = request.payload.camp_id
 
-      let options = {
-        screen_name: username,
-        include_entities: false
-      }
-      let handle = Twitter.getUserProfile(options)
-        .then((profile) => Handle.forge({
-          uid: '' + profile.id,
-          username: profile.screen_name,
-          name: profile.name,
+      let handle = Promise.join(
+        Twitter.getUserProfile({
+          screen_name: username,
+          include_entities: false
+        }),
+        Klout.getIdentity(username).catch((err) => {
+          if (err.message.match(/not found/i)) return {}
+          throw err
+        })
+      ).spread((twitterProfile, kloutIdentity) => {
+        return Handle.forge({
+          uid: '' + twitterProfile.id,
+          username: twitterProfile.screen_name,
+          name: twitterProfile.name,
           profile: {
-            image: profile.profile_image_url_https,
-            description: profile.description
+            image: twitterProfile.profile_image_url_https,
+            description: twitterProfile.description
           },
-          camp_id: campId
-        }).save())
-        .then((handle) => handle.refresh({ withRelated: ['camp'] }))
+          camp_id: campId,
+          klout_id: kloutIdentity.id
+        }).save()
+      }).then((handle) => handle.refresh({ withRelated: ['camp'] }))
 
       reply(handle)
     }
@@ -293,11 +303,11 @@ internals.applyRoutes = (server, next) => {
 }
 
 exports.register = function (server, options, next) {
-  server.dependency(['database', 'services/twitter'], internals.applyRoutes)
+  server.dependency(internals.dependencies, internals.applyRoutes)
   next()
 }
 
 exports.register.attributes = {
   name: 'api/handles',
-  dependencies: ['database', 'services/twitter']
+  dependencies: internals.dependencies
 }

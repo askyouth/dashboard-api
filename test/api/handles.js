@@ -10,6 +10,7 @@ const Promise = require('bluebird')
 const Manifest = require('../../manifest')
 const Errors = require('../../server/errors')
 const Database = require('../../server/database')
+const Klout = require('../../server/services/klout')
 const Twitter = require('../../server/services/twitter')
 const Handles = require('../../server/api/handles')
 const mock = require('../helpers/mock')
@@ -32,8 +33,8 @@ function initServer (plugins) {
 }
 
 const handles = [
-  { uid: '123', username: 'test1', name: 'Test One', camp_id: null, profile: {}, created_at: new Date() },
-  { uid: '456', username: 'test2', name: 'Test Two', camp_id: null, profile: {}, created_at: new Date('2000-01-01') }
+  { uid: '123', username: 'test1', name: 'Test One', camp_id: null, profile: {}, klout_score: 12.11, created_at: new Date() },
+  { uid: '456', username: 'test2', name: 'Test Two', camp_id: null, profile: {}, klout_score: 23.11, created_at: new Date('2000-01-01') }
 ]
 
 const camps = [
@@ -95,7 +96,11 @@ lab.before(() => {
     register: Twitter,
     options: getOptions('./server/services/twitter')
   }
-  const plugins = [Errors, DatabasePlugin, TwitterPlugin, Handles]
+  const KloutPlugin = {
+    register: Klout,
+    options: getOptions('./server/services/klout')
+  }
+  const plugins = [Errors, DatabasePlugin, TwitterPlugin, KloutPlugin, Handles]
   return Promise.all([initDatabase(), initServer(plugins)])
 })
 
@@ -216,6 +221,21 @@ lab.experiment('Handles result list', () => {
       Code.expect(result[1].username).to.equal(handles[0].username)
     })
   })
+
+  lab.test('it returns array of documents sorted by klout score', () => {
+    let request = {
+      method: 'GET',
+      url: '/handles?sort=klout_score&sortOrder=desc'
+    }
+
+    return server.inject(request).then((response) => {
+      Code.expect(response.statusCode).to.equal(200)
+      let result = JSON.parse(response.payload)
+      Code.expect(result).to.be.an.array().and.have.length(2)
+      Code.expect(result[0].username).to.equal(handles[1].username)
+      Code.expect(result[1].username).to.equal(handles[0].username)
+    })
+  })
 })
 
 lab.experiment('Handles create', () => {
@@ -233,6 +253,37 @@ lab.experiment('Handles create', () => {
     mock.twitterProfile({
       screen_name: handle.username
     })
+    mock.kloutIdentity({
+      screen_name: handle.username
+    })
+
+    return server.inject(request).then((response) => {
+      Code.expect(response.statusCode).to.equal(200)
+      let result = JSON.parse(response.payload)
+      return db('handle').where({ id: result.id }).select()
+    }).then((handles) => {
+      Code.expect(handles).to.be.an.array().and.have.length(1)
+      Code.expect(handles[0].username).to.equal(handle.username)
+      Code.expect(handles[0].camp_id).to.equal(camps[0].id)
+    })
+  })
+
+  lab.test('it creates new handle when klout id could not be found', () => {
+    let handle = {
+      username: 'PeriKourakli',
+      camp_id: camps[0].id
+    }
+    let request = {
+      method: 'POST',
+      url: '/handles',
+      payload: handle
+    }
+
+    mock.twitterProfile({
+      id: '' + ~~(Math.random() * 1e6),
+      screen_name: handle.username
+    })
+    mock.kloutIdentityNotFound()
 
     return server.inject(request).then((response) => {
       Code.expect(response.statusCode).to.equal(200)
@@ -256,6 +307,10 @@ lab.experiment('Handles create', () => {
     }
 
     mock.twitterProfile({
+      id: '' + ~~(Math.random() * 1e6),
+      screen_name: handle.username
+    })
+    mock.kloutIdentity({
       id: '' + ~~(Math.random() * 1e6),
       screen_name: handle.username
     })
