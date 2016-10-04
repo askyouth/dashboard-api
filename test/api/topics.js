@@ -33,13 +33,36 @@ const topics = [
   { name: 'Topic 2', description: 'topic about number two', keywords: ['bar'] }
 ]
 
+const handles = [
+  { uid: '123', username: 'test1', name: 'Test One' },
+  { uid: '456', username: 'test2', name: 'Test Two' }
+]
+
 function initDatabase () {
   db = Knex(Config.get('database.knex'))
   return db.migrate.latest().then(() => {
     let data = topics.map((row) => Object.assign({}, row, {
       keywords: JSON.stringify(row.keywords)
     }))
-    return db('topic').insert(data)
+    return Promise.all([
+      db('topic').insert(data).returning('id'),
+      db('handle').insert(handles).returning('id')
+    ])
+  }).spread((topicIds, handleIds) => {
+    topics[0].id = topicIds[0]
+    topics[1].id = topicIds[1]
+    handles[0].id = handleIds[0]
+    handles[1].id = handleIds[1]
+    topics[0].handles = [handles[0]]
+    topics[1].handles = [handles[0], handles[1]]
+    handles[0].topics = [topics[0], topics[1]]
+    handles[1].topics = [topics[1]]
+
+    return db('handle_topic').insert([
+      { handle_id: handles[0].id, topic_id: topics[0].id },
+      { handle_id: handles[0].id, topic_id: topics[1].id },
+      { handle_id: handles[1].id, topic_id: topics[1].id }
+    ])
   })
 }
 
@@ -97,6 +120,20 @@ lab.experiment('Topics result list', () => {
       Code.expect(result).to.be.an.array().and.have.length(1)
       Code.expect(result[0].name).to.equal(topics[1].name)
       Code.expect(result[0].description).to.equal(topics[1].description)
+    })
+  })
+
+  lab.test('it returns array of document with related fields', () => {
+    let request = {
+      method: 'GET',
+      url: '/topics?related=["handles"]'
+    }
+
+    return server.inject(request).then((response) => {
+      Code.expect(response.statusCode).to.equal(200)
+      let result = JSON.parse(response.payload)
+      Code.expect(result).to.be.an.array().and.have.length(2)
+      Code.expect(result[0].handles).to.be.an.array().and.have.length(1)
     })
   })
 
@@ -169,7 +206,7 @@ lab.experiment('Topic get', () => {
       let result = JSON.parse(response.payload)
       Code.expect(result.id).to.equal(1)
       Code.expect(result.name).to.equal(topics[0].name)
-      Code.expect(result.handles).to.be.an.array().and.have.length(0)
+      Code.expect(result.handles).to.be.an.array().and.have.length(1)
     })
   })
 
@@ -245,6 +282,23 @@ lab.experiment('Topic delete', () => {
       return db('topic').where({ id: 1 }).select()
     }).then((topic) => {
       Code.expect(topic).to.be.an.array().and.have.length(0)
+    })
+  })
+})
+
+lab.experiment('Topic related handles', () => {
+  lab.test('it returns array of related handles', () => {
+    let request = {
+      method: 'GET',
+      url: '/topics/2/handles'
+    }
+
+    return server.inject(request).then((response) => {
+      Code.expect(response.statusCode).to.equal(200)
+      let result = JSON.parse(response.payload)
+      Code.expect(result).to.be.an.array().and.have.length(2)
+      Code.expect(result[0].id).to.equal(topics[1].handles[0].id)
+      Code.expect(result[1].id).to.equal(topics[1].handles[1].id)
     })
   })
 })

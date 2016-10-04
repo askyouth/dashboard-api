@@ -19,7 +19,8 @@ internals.applyRoutes = function (server, next) {
           page: Joi.number().integer().default(1),
           pageSize: Joi.number().integer().default(20),
           sort: Joi.string().valid(['name']).default('name'),
-          sortOrder: Joi.string().valid(['asc', 'desc']).default('asc')
+          sortOrder: Joi.string().valid(['asc', 'desc']).default('asc'),
+          related: Joi.array().items(Joi.string().valid(['handles'])).default([])
         }
       }
     },
@@ -28,12 +29,14 @@ internals.applyRoutes = function (server, next) {
       let pageSize = request.query.pageSize
       let sort = request.query.sort
       let sortOrder = request.query.sortOrder
+      let related = request.query.related
 
       let topics = Topic.forge()
         .orderBy(sort, sortOrder)
         .fetchPage({
           page: page,
-          pageSize: pageSize
+          pageSize: pageSize,
+          withRelated: related
         })
 
       reply(topics)
@@ -148,6 +151,28 @@ internals.applyRoutes = function (server, next) {
       topic = topic.destroy().return()
 
       reply(topic).code(204)
+    }
+  })
+
+  server.route({
+    method: 'GET',
+    path: '/topics/{topicId}/handles',
+    config: {
+      description: 'Get handles related to topic',
+      validate: {
+        params: {
+          topicId: Joi.number().integer().required()
+        }
+      },
+      pre: [{
+        method: loadTopic, assign: 'topic'
+      }]
+    },
+    handler (request, reply) {
+      let topic = request.pre.topic
+      let handles = topic.related('handles').fetch()
+
+      reply(handles)
     }
   })
 
