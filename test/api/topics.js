@@ -137,6 +137,20 @@ lab.experiment('Topics result list', () => {
     })
   })
 
+  lab.test('it returns array of documents filtered by search term', () => {
+    let request = {
+      method: 'GET',
+      url: `/topics?filter={"search":"tw"}`
+    }
+
+    return server.inject(request).then((response) => {
+      Code.expect(response.statusCode).to.equal(200)
+      let result = JSON.parse(response.payload)
+      Code.expect(result).to.be.an.array().and.have.length(1)
+      Code.expect(result[0].name).to.equal(topics[1].name)
+    })
+  })
+
   lab.test('it returns array of documents sorted by name', () => {
     let request = {
       method: 'GET',

@@ -16,6 +16,9 @@ internals.applyRoutes = function (server, next) {
       description: 'Get topics',
       validate: {
         query: {
+          filter: Joi.object({
+            search: Joi.string()
+          }).default({}),
           page: Joi.number().integer().default(1),
           pageSize: Joi.number().integer().default(20),
           sort: Joi.string().valid(['name']).default('name'),
@@ -25,13 +28,22 @@ internals.applyRoutes = function (server, next) {
       }
     },
     handler (request, reply) {
+      let filter = request.query.filter
       let page = request.query.page
       let pageSize = request.query.pageSize
       let sort = request.query.sort
       let sortOrder = request.query.sortOrder
       let related = request.query.related
 
-      let topics = Topic.forge()
+      let topics = Topic
+        .query((qb) => {
+          if (filter.search) {
+            qb.where(function () {
+              this.where('topic.name', 'ilike', `%${filter.search}%`)
+                .orWhere('topic.description', 'ilike', `%${filter.search}%`)
+            })
+          }
+        })
         .orderBy(sort, sortOrder)
         .fetchPage({
           page: page,
