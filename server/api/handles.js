@@ -50,7 +50,7 @@ internals.applyRoutes = (server, next) => {
           }).default({}),
           page: Joi.number().integer().default(1),
           pageSize: Joi.number().integer().default(20),
-          sort: Joi.string().valid(['name', 'created_at']),
+          sort: Joi.string().valid(['name', 'created_at']).default('name'),
           sortOrder: Joi.string().valid(['asc', 'desc']).default('asc'),
           related: Joi.array().items(Joi.string().valid(['topics'])).default([])
         }
@@ -144,9 +144,7 @@ internals.applyRoutes = (server, next) => {
       let handle = request.pre.handle
       let related = ['camp'].concat(request.query.related)
 
-      if (related.length) {
-        handle = handle.load(related)
-      }
+      handle = handle.load(related)
 
       reply(handle)
     }

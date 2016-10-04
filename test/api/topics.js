@@ -99,6 +99,21 @@ lab.experiment('Topics result list', () => {
       Code.expect(result[0].description).to.equal(topics[1].description)
     })
   })
+
+  lab.test('it returns array of documents sorted by name', () => {
+    let request = {
+      method: 'GET',
+      url: '/topics?sort=name&sortOrder=desc'
+    }
+
+    return server.inject(request).then((response) => {
+      Code.expect(response.statusCode).to.equal(200)
+      let result = JSON.parse(response.payload)
+      Code.expect(result).to.be.an.array().and.have.length(2)
+      Code.expect(result[0].name).to.equal(topics[1].name)
+      Code.expect(result[1].name).to.equal(topics[0].name)
+    })
+  })
 })
 
 lab.experiment('Topics create', () => {

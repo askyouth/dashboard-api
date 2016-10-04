@@ -17,18 +17,24 @@ internals.applyRoutes = function (server, next) {
       validate: {
         query: {
           page: Joi.number().integer().default(1),
-          pageSize: Joi.number().integer().default(20)
+          pageSize: Joi.number().integer().default(20),
+          sort: Joi.string().valid(['name']).default('name'),
+          sortOrder: Joi.string().valid(['asc', 'desc']).default('asc')
         }
       }
     },
     handler (request, reply) {
-      let pageSize = request.query.pageSize
       let page = request.query.page
+      let pageSize = request.query.pageSize
+      let sort = request.query.sort
+      let sortOrder = request.query.sortOrder
 
-      let topics = Topic.fetchPage({
-        pageSize: pageSize,
-        page: page
-      })
+      let topics = Topic.forge()
+        .orderBy(sort, sortOrder)
+        .fetchPage({
+          page: page,
+          pageSize: pageSize
+        })
 
       reply(topics)
     }
