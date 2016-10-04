@@ -150,6 +150,20 @@ lab.experiment('Handles result list', () => {
     })
   })
 
+  lab.test('it returns array of documents filtered by search term', () => {
+    let request = {
+      method: 'GET',
+      url: `/handles?filter={"search":"tw"}`
+    }
+
+    return server.inject(request).then((response) => {
+      Code.expect(response.statusCode).to.equal(200)
+      let result = JSON.parse(response.payload)
+      Code.expect(result).to.be.an.array().and.have.length(1)
+      Code.expect(result[0].username).to.equal(handles[1].username)
+    })
+  })
+
   lab.test('it returns array of documents filtered by camp', () => {
     let request = {
       method: 'GET',

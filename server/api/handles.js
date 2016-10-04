@@ -49,6 +49,7 @@ internals.applyRoutes = (server, next) => {
       validate: {
         query: {
           filter: Joi.object({
+            search: Joi.string(),
             camp: Joi.number().integer(),
             topic: Joi.number().integer()
           }).default({}),
@@ -70,6 +71,12 @@ internals.applyRoutes = (server, next) => {
 
       let handles = Handle
         .query((qb) => {
+          if (filter.search) {
+            qb.where(function () {
+              this.where('handle.username', 'ilike', `%${filter.search}%`)
+                .orWhere('handle.name', 'ilike', `%${filter.search}%`)
+            })
+          }
           if (filter.camp) {
             qb.where('handle.camp_id', '=', filter.camp)
           }
