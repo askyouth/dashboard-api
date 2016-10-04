@@ -2,19 +2,19 @@
   "connection": {
     "api": {
       "port": 4000,
-      "uri": "http://ask-dashboard.com"
+      "uri":  "http://ask-dashboard.com"
     }
   },
   "database": {
     "knex": {
       "client": "pg",
       "connection": {
-        "host": "localhost",
-        "user": "postgres",
+        "host":     "localhost",
+        "user":     "postgres",
         "password": "postgres",
         "database": "ask_dashboard_dev",
-        "port": 5432,
-        "charset": "utf8"
+        "port":     5432,
+        "charset":  "utf8"
       },
       "pool": {
         "min": 2,
@@ -31,9 +31,9 @@
   },
   "twitter": {
     "auth": {
-      "consumer_key": "kTLJl0aFhU3BL0ux47Fvg",
-      "consumer_secret": "Stwm08ObQtCbbriiES9ok9XSGAa8YBZP0kdLTMx3Q4",
-      "access_token": "1746146112-iTu7vKMwnIc9WsqFms3Iix02fKBNCYMeTJiyN9W",
+      "consumer_key":        "kTLJl0aFhU3BL0ux47Fvg",
+      "consumer_secret":     "Stwm08ObQtCbbriiES9ok9XSGAa8YBZP0kdLTMx3Q4",
+      "access_token":        "1746146112-iTu7vKMwnIc9WsqFms3Iix02fKBNCYMeTJiyN9W",
       "access_token_secret": "NmIvV3RWZHemmWFyYzN9NjOYalwtI7BLeqdPq3yGLcTVH"
     }
   }
