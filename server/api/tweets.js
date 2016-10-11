@@ -53,6 +53,7 @@ internals.applyRoutes = (server, next) => {
           if (userId) qb.andWhere('user_id', '=', userId)
           qb.limit(limit)
         })
+        .orderBy('created_at', 'desc')
         .fetch()
 
       reply(tweets)
