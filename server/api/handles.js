@@ -134,6 +134,8 @@ internals.applyRoutes = (server, next) => {
           camp_id: campId,
           klout_id: kloutIdentity.id
         }).save()
+      }).tap((handle) => {
+        Twitter.follow(handle.get('uid'))
       }).then((handle) => handle.refresh({ withRelated: ['camp'] }))
 
       reply(handle)

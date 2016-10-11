@@ -31,10 +31,10 @@
   },
   "twitter": {
     "auth": {
-      "consumer_key":        "kTLJl0aFhU3BL0ux47Fvg",
-      "consumer_secret":     "Stwm08ObQtCbbriiES9ok9XSGAa8YBZP0kdLTMx3Q4",
-      "access_token":        "1746146112-iTu7vKMwnIc9WsqFms3Iix02fKBNCYMeTJiyN9W",
-      "access_token_secret": "NmIvV3RWZHemmWFyYzN9NjOYalwtI7BLeqdPq3yGLcTVH"
+      "consumer_key":        "DqSzurHjdaqo8xaQwV5Z2jt96",
+      "consumer_secret":     "h1xj64OBU17yHmw8HRSn9slhs7auMJaogIBrYJ5ap3rGLqYP28",
+      "access_token":        "1746146112-Rkib4RtH6rqwNin1wbI7wGPzk040WON1EP4cpTn",
+      "access_token_secret": "emeJ0OOjZNyxd9wfpQBgFg4fGdm9TGsW2IXFHCcJ5UASm"
     }
   },
   "klout": {

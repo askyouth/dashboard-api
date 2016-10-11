@@ -36,6 +36,8 @@ const manifest = {
     }
   }],
   registrations: [{
+    plugin: 'hapi-io'
+  }, {
     plugin: {
       register: 'good',
       options: {
@@ -86,6 +88,8 @@ const manifest = {
     plugin: './server/api/handles'
   }, {
     plugin: './server/api/topics'
+  }, {
+    plugin: './server/api/tweets'
   }, {
     plugin: {
       register: './server/services/twitter',

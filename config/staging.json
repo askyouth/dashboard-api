@@ -1,1 +1,10 @@
-{}
+{
+  "twitter": {
+    "auth": {
+      "consumer_key":        "VPHO0d3crX3LEXY94dpR4pFyU",
+      "consumer_secret":     "fAi5ioeAMVbpvUsFjUpyKmspd2wMW2TxkqI3yVmP7oXOKOFTMw",
+      "access_token":        "1746146112-cpIOhoG97vBKsyyh4zk29DF9Z2EUQwpAPsrRRKn",
+      "access_token_secret": "v9buzbjUA6PE8H9dctzu5WrVNLf2JbOLYD2Vx6UFyVAk6"
+    }
+  }
+}

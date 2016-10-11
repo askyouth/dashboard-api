@@ -3,5 +3,13 @@
     "api": {
       "uri": "http://ask-dashboard.local"
     }
+  },
+  "twitter": {
+    "auth": {
+      "consumer_key":        "yOjQ8bmKNUq0WzWFdVl6OoMmj",
+      "consumer_secret":     "iDlnjhutYyJjvMCWg9LzwxZ9WxWrqz5vuhUb01RV68EkbMKsNV",
+      "access_token":        "1746146112-XDUa4XptyvB9ShsyjDj7sSlBgQymPrH5x6PkZ0B",
+      "access_token_secret": "GWWr0asmbxRRmwWfR3YZQGj5YeSUhXmgdKfLpaWHtm85F"
+    }
   }
 }
