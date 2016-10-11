@@ -35,7 +35,6 @@ internals.init = function (server, twitter, options, next) {
   }
 
   function tweetHandler (tweet) {
-    console.log('%s: %s', tweet.user.screen_name, tweet.text)
     return Tweet.forge({
       id: tweet.id_str,
       text: tweet.text,
@@ -77,7 +76,7 @@ internals.init = function (server, twitter, options, next) {
       stalled = false
       stream.reconnect()
     }
-    setTimeout(reconnect, 1000)
+    setTimeout(reconnect, 60 * 1000)
   }
 
   Handle.collection().fetch().then((handles) => {
