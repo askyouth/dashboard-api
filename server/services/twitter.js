@@ -47,6 +47,7 @@ internals.init = function (server, twitter, options, next) {
         location: tweet.user.location,
         url: tweet.user.url,
         description: tweet.user.description,
+        profile_image_url: tweet.user.profile_image_url_https,
         verified: tweet.user.verified,
         created_at: new Date(tweet.user.created_at)
       },

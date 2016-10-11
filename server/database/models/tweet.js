@@ -17,9 +17,10 @@ module.exports = (BaseModel, bookshelf) => BaseModel.extend({
       id: Joi.string().required(),
       name: Joi.string(),
       screen_name: Joi.string(),
-      location: Joi.string(),
-      url: Joi.string(),
-      description: Joi.string(),
+      location: Joi.string().allow(null),
+      url: Joi.string().allow(null),
+      description: Joi.string().allow(null),
+      profile_image_url: Joi.string(),
       verified: Joi.boolean(),
       created_at: Joi.date().timestamp()
     }),
