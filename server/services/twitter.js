@@ -5,6 +5,7 @@ const Joi = require('joi')
 const Twitter = require('twit')
 const TwitterStream = require('node-tweet-stream')
 const Promise = require('bluebird')
+const _ = require('lodash')
 
 Twitter.prototype.getAsync = Promise.promisify(Twitter.prototype.get)
 Twitter.prototype.postAsync = Promise.promisify(Twitter.prototype.post)
@@ -17,9 +18,9 @@ internals.init = function (server, twitter, options, next) {
   const IO = server.plugins['hapi-io'].io
   const Database = server.plugins.database
   const Tweet = Database.model('Tweet')
+  const Topic = Database.model('Topic')
   const Handle = Database.model('Handle')
   const log = server.log.bind(server, ['services', 'twitter'])
-  let stalled = false
 
   const stream = new TwitterStream({
     consumer_key: options.auth.consumer_key,
@@ -29,6 +30,14 @@ internals.init = function (server, twitter, options, next) {
   })
   stream.on('error', errorHandler)
   stream.on('tweet', tweetHandler)
+
+  const reconnect = _.throttle(() => {
+    log('reconnect')
+    stream.reconnect()
+  }, 30 * 1000, {
+    leading: false,
+    trailing: true
+  })
 
   function errorHandler (err) {
     log(`error: ${err.message}`)
@@ -64,25 +73,46 @@ internals.init = function (server, twitter, options, next) {
       .catch((err) => log(`error: ${err.message}`))
   }
 
+  function track (keywords) {
+    log(`tracking ${keywords}`)
+    stream.track(keywords, false)
+    reconnect()
+  }
+
+  function untrack (keywords) {
+    log(`untracking ${keywords}`)
+    stream.untrack(keywords, false)
+    reconnect()
+  }
+
   function follow (handles) {
     log(`tracking ${handles}`)
-    stalled = true
     stream.follow(handles, false)
+    reconnect()
   }
 
+  function unfollow (handles) {
+    log(`untracking ${handles}`)
+    stream.unfollow(handles, false)
+    reconnect()
+  }
+
+  server.expose('track', track)
+  server.expose('untrack', untrack)
   server.expose('follow', follow)
+  server.expose('unfollow', unfollow)
 
-  function reconnect () {
-    if (stalled) {
-      stalled = false
-      stream.reconnect()
-    }
-    setTimeout(reconnect, 60 * 1000)
-  }
+  Promise.join(
+    Topic.collection().fetch(),
+    Handle.collection().fetch()
+  ).spread((topics, handles) => {
+    topics = topics.pluck('keywords')
+      .reduce((memo, keywords) => memo.concat(keywords), [])
+    handles = handles.pluck('uid')
 
-  Handle.collection().fetch().then((handles) => {
-    let handleIds = handles.pluck('uid')
-    follow(handleIds)
+    topics.length && track(topics)
+    handles.length && follow(handles)
+
     reconnect()
   }).nodeify(next)
 }

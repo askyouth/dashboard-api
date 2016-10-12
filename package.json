@@ -25,7 +25,6 @@
     "@uxp/task-runner": "^1.1.1",
     "bluebird": "^3.4.6",
     "bookshelf": "^0.10.1",
-    "bookshelf-json-columns": "^1.2.2",
     "boom": "^4.0.0",
     "confidence": "^3.0.1",
     "config": "^1.21.0",

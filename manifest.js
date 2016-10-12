@@ -78,8 +78,7 @@ const manifest = {
         knex: Config.getp('database.knex'),
         models: './server/database/models',
         baseModel: './server/database/models/_base',
-        plugins: ['pagination', 'registry', 'virtuals',
-                  'visibility', 'bookshelf-json-columns']
+        plugins: ['pagination', 'registry', 'virtuals', 'visibility']
       }
     }
   }, {

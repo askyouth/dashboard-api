@@ -5,7 +5,10 @@ const Joi = require('joi')
 
 const internals = {}
 
+internals.dependencies = ['database', 'services/twitter']
+
 internals.applyRoutes = function (server, next) {
+  const Twitter = server.plugins['services/twitter']
   const Database = server.plugins.database
   const Topic = Database.model('Topic')
 
@@ -71,7 +74,11 @@ internals.applyRoutes = function (server, next) {
     handler (request, reply) {
       let payload = request.payload
 
-      let topic = Topic.forge(payload).save()
+      let topic = Topic.forge(payload).save().tap((topic) => {
+        if (topic.get('keywords').length) {
+          Twitter.track(topic.get('keywords'))
+        }
+      })
 
       reply(topic)
     }
@@ -137,7 +144,21 @@ internals.applyRoutes = function (server, next) {
       let topic = request.pre.topic
       let payload = request.payload
 
-      topic = topic.save(payload)
+      topic.set(payload)
+
+      let previousKeywords = topic.previous('keywords')
+      let hasChangedKeywords = topic.hasChanged('keywords')
+
+      topic = topic.save().tap((topic) => {
+        if (hasChangedKeywords) {
+          if (previousKeywords.length) {
+            Twitter.unfollow(previousKeywords)
+          }
+          if (topic.get('keywords').length) {
+            Twitter.follow(topic.get('keywords'))
+          }
+        }
+      })
 
       reply(topic)
     }
@@ -192,11 +213,11 @@ internals.applyRoutes = function (server, next) {
 }
 
 exports.register = function (server, options, next) {
-  server.dependency(['database'], internals.applyRoutes)
+  server.dependency(internals.dependencies, internals.applyRoutes)
   next()
 }
 
 exports.register.attributes = {
   name: 'api/topics',
-  dependecies: ['database']
+  dependecies: internals.dependencies
 }

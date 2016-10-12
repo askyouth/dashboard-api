@@ -10,10 +10,12 @@ module.exports = (BaseModel, bookshelf) => BaseModel.extend({
     id: Joi.number().integer(),
     name: Joi.string().required(),
     description: Joi.string().allow(null),
-    keywords: Joi.array().items(Joi.string()).default([])
+    keywords: Joi.array().items(Joi.string())
   },
 
-  jsonColumns: ['keywords'],
+  defaults: {
+    keywords: []
+  },
 
   handles () {
     return this.belongsToMany('Handle', 'handle_topic')
