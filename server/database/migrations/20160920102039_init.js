@@ -42,23 +42,8 @@ exports.up = (knex, Promise) => knex.schema
     table.unique(['handle_id', 'topic_id'])
     table.timestamps()
   })
-  .createTable('attribute', (table) => {
-    table.increments().primary()
-    table.string('name').notNullable()
-    table.string('description')
-    table.timestamps()
-  })
-  .createTable('handle_attribute', (table) => {
-    table.increments().primary()
-    table.integer('attribute_id').notNullable().references('attribute.id')
-      .onUpdate('cascade').onDelete('cascade')
-    table.integer('value').notNullable()
-    table.timestamps()
-  })
 
 exports.down = (knex, Promise) => knex.schema
-  .dropTable('handle_attribute')
-  .dropTable('attribute')
   .dropTable('handle_topic')
   .dropTable('topic')
   .dropTable('handle')

@@ -5,7 +5,7 @@ exports.up = (knex, Promise) => knex.schema
     table.dropColumn('keywords')
   })
   .table('topic', (table) => {
-    table.specificType('keywords', 'varchar(255)[]')
+    table.specificType('keywords', 'varchar(255)[]').defaultTo('{}')
   })
 
 exports.down = (knex, Promise) => knex.schema
