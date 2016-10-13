@@ -14,7 +14,7 @@ const internals = {}
 
 internals.dependencies = ['hapi-io', 'database']
 
-internals.init = function (server, twitter, options, next) {
+internals.init = function (server, options, next) {
   const IO = server.plugins['hapi-io'].io
   const Database = server.plugins.database
   const Tweet = Database.model('Tweet')
@@ -22,6 +22,7 @@ internals.init = function (server, twitter, options, next) {
   const Handle = Database.model('Handle')
   const log = server.log.bind(server, ['services', 'twitter'])
 
+  const twitter = new Twitter(options.auth)
   const stream = new TwitterStream({
     consumer_key: options.auth.consumer_key,
     consumer_secret: options.auth.consumer_secret,
@@ -51,31 +52,8 @@ internals.init = function (server, twitter, options, next) {
   }
 
   function storeTweet (tweet) {
-    return Tweet.forge({
-      id: tweet.id_str,
-      text: tweet.text,
-      lang: tweet.lang,
-      user_id: tweet.user.id_str,
-      user: {
-        id: tweet.user.id_str,
-        name: tweet.user.name,
-        screen_name: tweet.user.screen_name,
-        location: tweet.user.location,
-        url: tweet.user.url,
-        description: tweet.user.description,
-        profile_image_url: tweet.user.profile_image_url_https,
-        verified: tweet.user.verified,
-        created_at: new Date(tweet.user.created_at)
-      },
-      favorited: tweet.favorited,
-      retweeted: tweet.retweeted,
-      entities: tweet.entities,
-      extended_entities: tweet.extended_entities,
-      parent_id: tweet.in_reply_to_status_id_str,
-      in_reply_to_user_id: tweet.in_reply_to_user_id_str,
-      in_reply_to_screen_name: tweet.in_reply_to_screen_name,
-      created_at: new Date(tweet.created_at)
-    }).save(null, { method: 'insert' })
+    return Tweet.forge(internals.transform(tweet))
+      .save(null, { method: 'insert' })
   }
 
   function processTopics (tweet) {
@@ -126,10 +104,26 @@ internals.init = function (server, twitter, options, next) {
     reconnect()
   }
 
+  function getUserProfile (opts) {
+    return twitter.getAsync('users/show', opts)
+  }
+
+  function statusUpdate (opts) {
+    return twitter.postAsync('statuses/update', opts)
+      .then(storeTweet)
+      .tap((tweet) => {
+        return processTopics(tweet).then((topics) => {
+          return broadcast(tweet, topics)
+        })
+      })
+  }
+
   server.expose('track', track)
   server.expose('untrack', untrack)
   server.expose('follow', follow)
   server.expose('unfollow', unfollow)
+  server.expose('getUserProfile', getUserProfile)
+  server.expose('statusUpdate', statusUpdate)
 
   Promise.join(
     Topic.collection().fetch(),
@@ -145,6 +139,32 @@ internals.init = function (server, twitter, options, next) {
     reconnect()
   }).nodeify(next)
 }
+
+internals.transform = (tweet) => ({
+  id: tweet.id_str,
+  text: tweet.text,
+  lang: tweet.lang,
+  user_id: tweet.user.id_str,
+  user: {
+    id: tweet.user.id_str,
+    name: tweet.user.name,
+    screen_name: tweet.user.screen_name,
+    location: tweet.user.location,
+    url: tweet.user.url,
+    description: tweet.user.description,
+    profile_image_url: tweet.user.profile_image_url_https,
+    verified: tweet.user.verified,
+    created_at: new Date(tweet.user.created_at)
+  },
+  favorited: tweet.favorited,
+  retweeted: tweet.retweeted,
+  entities: tweet.entities,
+  extended_entities: tweet.extended_entities,
+  parent_id: tweet.in_reply_to_status_id_str,
+  in_reply_to_user_id: tweet.in_reply_to_user_id_str,
+  in_reply_to_screen_name: tweet.in_reply_to_screen_name,
+  created_at: new Date(tweet.created_at)
+})
 
 exports.register = function (server, options, next) {
   const schema = Joi.object({
@@ -162,16 +182,8 @@ exports.register = function (server, options, next) {
     return next(err)
   }
 
-  const twitter = new Twitter(options.auth)
-
-  function getUserProfile (opts) {
-    return twitter.getAsync('users/show', opts)
-  }
-
-  server.expose('getUserProfile', getUserProfile)
-
   server.dependency(internals.dependencies, (server, next) => {
-    internals.init(server, twitter, options, next)
+    internals.init(server, options, next)
   })
 
   next()

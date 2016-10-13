@@ -7,11 +7,12 @@ const NotFoundError = Boom.notFound
 
 const internals = {}
 
-internals.dependencies = ['hapi-io', 'database']
+internals.dependencies = ['hapi-io', 'database', 'services/twitter']
 
 internals.applyRoutes = (server, next) => {
   const Database = server.plugins.database
   const Tweet = Database.model('Tweet')
+  const Twitter = server.plugins['services/twitter']
 
   function loadTweet (request, reply) {
     let tweetId = request.params.id
@@ -73,6 +74,36 @@ internals.applyRoutes = (server, next) => {
       }
 
       reply(tweets)
+    }
+  })
+
+  server.route({
+    method: 'POST',
+    path: '/tweets',
+    config: {
+      payload: {
+        output: 'stream',
+        parse: true,
+        allow: 'multipart/form-data'
+      },
+      validate: {
+        payload: {
+          text: Joi.string().required(),
+          replyStatusId: Joi.string(),
+          file: Joi.any()
+        }
+      }
+    },
+    handler (request, reply) {
+      let text = request.payload.text
+      let replyStatusId = request.replyStatusId
+
+      let tweet = Twitter.statusUpdate({
+        status: text,
+        in_reply_to_status_id: replyStatusId
+      })
+
+      reply(tweet)
     }
   })
 
