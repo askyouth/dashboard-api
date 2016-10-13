@@ -33,6 +33,7 @@ internals.applyRoutes = (server, next) => {
         query: {
           maxId: Joi.string(),
           userId: Joi.string(),
+          topicId: Joi.number().integer(),
           limit: Joi.number().integer().default(20)
         },
         options: {
@@ -46,15 +47,30 @@ internals.applyRoutes = (server, next) => {
     handler (request, reply) {
       let maxId = request.query.maxId
       let userId = request.query.userId
+      let topicId = request.query.topicId
       let limit = request.query.limit
+      let socket = request.plugins['hapi-io'].socket
+
       let tweets = Tweet.collection()
         .query((qb) => {
           if (maxId) qb.andWhere('id', '<', maxId)
           if (userId) qb.andWhere('user_id', '=', userId)
+          if (topicId) {
+            qb.innerJoin('tweet_topic', 'tweet.id', 'tweet_topic.tweet_id')
+            qb.groupBy('tweet.id')
+            qb.where('tweet_topic.topic_id', topicId)
+          }
           qb.limit(limit)
         })
         .orderBy('created_at', 'desc')
         .fetch()
+
+      if (socket) {
+        socket.leaveAll()
+        if (userId) socket.join(`user:${userId}`)
+        else if (topicId) socket.join(`topic:${topicId}`)
+        else socket.join('timeline')
+      }
 
       reply(tweets)
     }

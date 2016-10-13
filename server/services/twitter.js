@@ -44,6 +44,13 @@ internals.init = function (server, twitter, options, next) {
   }
 
   function tweetHandler (tweet) {
+    storeTweet(tweet)
+      .then((tweet) => [tweet, processTopics(tweet)])
+      .spread(broadcast)
+      .catch((err) => log(`error: ${err.message}`))
+  }
+
+  function storeTweet (tweet) {
     return Tweet.forge({
       id: tweet.id_str,
       text: tweet.text,
@@ -69,8 +76,30 @@ internals.init = function (server, twitter, options, next) {
       in_reply_to_screen_name: tweet.in_reply_to_screen_name,
       created_at: new Date(tweet.created_at)
     }).save(null, { method: 'insert' })
-      .then((tweet) => IO.sockets.emit('tweets:new', tweet))
-      .catch((err) => log(`error: ${err.message}`))
+  }
+
+  function processTopics (tweet) {
+    return Topic
+      .collection()
+      .query('where', 'keywords', '!=', '{}')
+      .fetch()
+      .then((topics) => {
+        let tokens = _.uniq(tweet.get('text').match(/\w+/g)).map(_.toLower)
+        let matched = topics.filter((topic) => _.intersection(
+          tokens,
+          topic.get('keywords').map(_.toLower)
+        ).length)
+
+        if (!matched.length) return []
+        return tweet.topics().attach(matched)
+      })
+  }
+
+  function broadcast (tweet, topics) {
+    tweet = tweet.toJSON()
+    IO.in('timeline').emit('tweets:new', tweet)
+    IO.in(`handle:${tweet.user_id}`).emit('tweets:new', tweet)
+    topics.forEach((topic) => IO.in(`topic:${topic.id}`).emit('tweets:new', tweet))
   }
 
   function track (keywords) {

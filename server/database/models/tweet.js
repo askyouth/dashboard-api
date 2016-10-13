@@ -34,6 +34,10 @@ module.exports = (BaseModel, bookshelf) => BaseModel.extend({
     created_at: Joi.date().timestamp()
   },
 
+  handle () {
+    return this.belongsTo('Handle', 'user_id')
+  },
+
   parent () {
     return this.belongsTo('Tweet', 'parent_id')
   },
@@ -41,5 +45,9 @@ module.exports = (BaseModel, bookshelf) => BaseModel.extend({
   replies () {
     return this.hasMany('Tweet', 'parent_id')
       .orderBy('created_at', 'asc')
+  },
+
+  topics () {
+    return this.belongsToMany('Topic', 'tweet_topic')
   }
 })

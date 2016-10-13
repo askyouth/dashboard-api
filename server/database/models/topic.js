@@ -19,5 +19,9 @@ module.exports = (BaseModel, bookshelf) => BaseModel.extend({
 
   handles () {
     return this.belongsToMany('Handle', 'handle_topic')
+  },
+
+  tweets () {
+    return this.belongsToMany('Tweet', 'tweet_topic')
   }
 })
