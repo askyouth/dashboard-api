@@ -53,8 +53,8 @@ internals.applyRoutes = (server, next) => {
 
       let tweets = Tweet.collection()
         .query((qb) => {
-          if (maxId) qb.andWhere('id', '<', maxId)
-          if (userId) qb.andWhere('user_id', '=', userId)
+          if (maxId) qb.andWhere('tweet.id', '<', maxId)
+          if (userId) qb.andWhere('tweet.user_id', '=', userId)
           if (topicId) {
             qb.innerJoin('tweet_topic', 'tweet.id', 'tweet_topic.tweet_id')
             qb.groupBy('tweet.id')
