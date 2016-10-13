@@ -152,10 +152,10 @@ internals.applyRoutes = function (server, next) {
       topic = topic.save().tap((topic) => {
         if (hasChangedKeywords) {
           if (previousKeywords.length) {
-            Twitter.unfollow(previousKeywords)
+            Twitter.untrack(previousKeywords)
           }
           if (topic.get('keywords').length) {
-            Twitter.follow(topic.get('keywords'))
+            Twitter.track(topic.get('keywords'))
           }
         }
       })
