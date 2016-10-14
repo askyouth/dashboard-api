@@ -110,7 +110,7 @@ internals.applyRoutes = (server, next) => {
       }).then((media) => Twitter.statusUpdate({
         status: text,
         in_reply_to_status_id: replyStatusId,
-        media_ids: media.media_id_string
+        media_ids: media && media.media_id_string
       }))
 
       reply(tweet)
