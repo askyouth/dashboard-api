@@ -104,6 +104,13 @@ const manifest = {
         interval: +Config.get('klout.interval')
       }
     }
+  }, {
+    plugin: {
+      register: './server/services/file',
+      options: {
+        directory: process.cwd() + '/public/uploads'
+      }
+    }
   }]
 }
 

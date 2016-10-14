@@ -9,6 +9,7 @@ const _ = require('lodash')
 
 Twitter.prototype.getAsync = Promise.promisify(Twitter.prototype.get)
 Twitter.prototype.postAsync = Promise.promisify(Twitter.prototype.post)
+Twitter.prototype.postMediaChunkedAsync = Promise.promisify(Twitter.prototype.postMediaChunked)
 
 const internals = {}
 
@@ -111,11 +112,11 @@ internals.init = function (server, options, next) {
   function statusUpdate (opts) {
     return twitter.postAsync('statuses/update', opts)
       .then(storeTweet)
-      .tap((tweet) => {
-        return processTopics(tweet).then((topics) => {
-          return broadcast(tweet, topics)
-        })
-      })
+      .tap((tweet) => processTopics(tweet).then((topics) => broadcast(tweet, topics)))
+  }
+
+  function upload (filename) {
+    return twitter.postMediaChunkedAsync({ file_path: filename })
   }
 
   server.expose('track', track)
@@ -124,6 +125,7 @@ internals.init = function (server, options, next) {
   server.expose('unfollow', unfollow)
   server.expose('getUserProfile', getUserProfile)
   server.expose('statusUpdate', statusUpdate)
+  server.expose('upload', upload)
 
   Promise.join(
     Topic.collection().fetch(),

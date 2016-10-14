@@ -3,15 +3,17 @@
 // Module dependencies.
 const Joi = require('joi')
 const Boom = require('boom')
+const Promise = require('bluebird')
 const NotFoundError = Boom.notFound
 
 const internals = {}
 
-internals.dependencies = ['hapi-io', 'database', 'services/twitter']
+internals.dependencies = ['hapi-io', 'database', 'services/twitter', 'services/file']
 
 internals.applyRoutes = (server, next) => {
   const Database = server.plugins.database
   const Tweet = Database.model('Tweet')
+  const File = server.plugins['services/file']
   const Twitter = server.plugins['services/twitter']
 
   function loadTweet (request, reply) {
@@ -96,12 +98,18 @@ internals.applyRoutes = (server, next) => {
     },
     handler (request, reply) {
       let text = request.payload.text
-      let replyStatusId = request.replyStatusId
+      let replyStatusId = request.payload.replyStatusId
+      let file = request.payload.file
 
-      let tweet = Twitter.statusUpdate({
+      let tweet = Promise.resolve().then(() => {
+        if (!file) return
+        return File.create(file, { name: file.hapi.name })
+          .then((meta) => Twitter.upload(meta.filename))
+      }).then((media) => Twitter.statusUpdate({
         status: text,
-        in_reply_to_status_id: replyStatusId
-      })
+        in_reply_to_status_id: replyStatusId,
+        media_ids: media.media_id_string
+      }))
 
       reply(tweet)
     }
