@@ -86,6 +86,7 @@ internals.applyRoutes = (server, next) => {
       payload: {
         output: 'stream',
         parse: true,
+        maxBytes: 10 * 1024 * 1024,
         allow: 'multipart/form-data'
       },
       validate: {
