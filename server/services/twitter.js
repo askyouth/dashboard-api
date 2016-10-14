@@ -115,6 +115,10 @@ internals.init = function (server, options, next) {
       .tap((tweet) => processTopics(tweet).then((topics) => broadcast(tweet, topics)))
   }
 
+  function statusRetweet (id, opts) {
+    return twitter.postAsync(`statuses/retweet/${id}`)
+  }
+
   function upload (filename) {
     return twitter.postMediaChunkedAsync({ file_path: filename })
   }
@@ -125,6 +129,7 @@ internals.init = function (server, options, next) {
   server.expose('unfollow', unfollow)
   server.expose('getUserProfile', getUserProfile)
   server.expose('statusUpdate', statusUpdate)
+  server.expose('statusRetweet', statusRetweet)
   server.expose('upload', upload)
 
   Promise.join(

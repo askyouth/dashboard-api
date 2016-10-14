@@ -5,6 +5,7 @@ const Joi = require('joi')
 const Boom = require('boom')
 const Promise = require('bluebird')
 const NotFoundError = Boom.notFound
+const BadRequestError = Boom.badRequest
 
 const internals = {}
 
@@ -138,6 +139,40 @@ internals.applyRoutes = (server, next) => {
       tweet = tweet.load(['parent', 'replies'])
 
       reply(tweet)
+    }
+  })
+
+  server.route({
+    method: 'POST',
+    path: '/tweets/{id}/retweet',
+    config: {
+      description: 'Retweet tweet',
+      validate: {
+        params: {
+          id: Joi.string().required()
+        }
+      },
+      pre: [{
+        method: loadTweet, assign: 'tweet'
+      }]
+    },
+    handler (request, reply) {
+      let tweet = request.pre.tweet
+
+      let promise = Twitter.statusRetweet(tweet.get('id'))
+        .catch((err) => {
+          // already retweeted
+          if (err.code === 327) return
+          // tweet deleted
+          if (err.code === 144) {
+            return tweet.destroy().then(() => {
+              throw new BadRequestError('Tweet deleted')
+            })
+          }
+        })
+        .then(() => tweet.save({ retweeted: true }, { validate: false }))
+
+      reply(promise)
     }
   })
 
