@@ -176,6 +176,70 @@ internals.applyRoutes = (server, next) => {
     }
   })
 
+  server.route({
+    method: 'POST',
+    path: '/tweets/{id}/favorite',
+    config: {
+      description: 'Add tweet to favorites',
+      validate: {
+        params: {
+          id: Joi.string().required()
+        }
+      },
+      pre: [{
+        method: loadTweet, assign: 'tweet'
+      }]
+    },
+    handler (request, reply) {
+      let tweet = request.pre.tweet
+
+      let promise = Twitter.statusFavorite(tweet.get('id'))
+        .catch((err) => {
+          // tweet deleted
+          if (err.code === 144) {
+            return tweet.destroy().then(() => {
+              throw new BadRequestError('Tweet deleted')
+            })
+          }
+        })
+        .then(() => tweet.save({ favorited: true }, { validate: false }))
+
+      reply(promise)
+    }
+  })
+
+  server.route({
+    method: 'POST',
+    path: '/tweets/{id}/unfavorite',
+    config: {
+      description: 'Remove tweet from favorites',
+      validate: {
+        params: {
+          id: Joi.string().required()
+        }
+      },
+      pre: [{
+        method: loadTweet, assign: 'tweet'
+      }]
+    },
+    handler (request, reply) {
+      let tweet = request.pre.tweet
+
+      let promise = Twitter.statusUnfavorite(tweet.get('id'))
+        .catch((err) => {
+          // tweet deleted
+          if (err.code === 144) {
+            return tweet.destroy().then(() => {
+              throw new BadRequestError('Tweet deleted')
+            })
+          }
+        })
+        .then(() => tweet.save({ favorited: false }, { validate: false }))
+
+      reply(promise)
+    }
+  })
+
   next()
 }
 

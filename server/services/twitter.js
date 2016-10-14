@@ -115,8 +115,16 @@ internals.init = function (server, options, next) {
       .tap((tweet) => processTopics(tweet).then((topics) => broadcast(tweet, topics)))
   }
 
-  function statusRetweet (id, opts) {
+  function statusRetweet (id) {
     return twitter.postAsync(`statuses/retweet/${id}`)
+  }
+
+  function statusFavorite (id) {
+    return twitter.postAsync('favorites/create', { id: id })
+  }
+
+  function statusUnfavorite (id) {
+    return twitter.postAsync('favorites/destroy', { id: id })
   }
 
   function upload (filename) {
@@ -130,6 +138,8 @@ internals.init = function (server, options, next) {
   server.expose('getUserProfile', getUserProfile)
   server.expose('statusUpdate', statusUpdate)
   server.expose('statusRetweet', statusRetweet)
+  server.expose('statusFavorite', statusFavorite)
+  server.expose('statusUnfavorite', statusUnfavorite)
   server.expose('upload', upload)
 
   Promise.join(
