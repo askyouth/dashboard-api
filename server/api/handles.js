@@ -218,9 +218,12 @@ internals.applyRoutes = (server, next) => {
     handler (request, reply) {
       let handle = request.pre.handle
 
-      handle = handle.destroy()
+      let handleId = handle.get('id')
+      let promise = handle.destroy().then(() => {
+        Twitter.unfollow(handleId)
+      })
 
-      reply(handle).code(204)
+      reply(promise).code(204)
     }
   })
 

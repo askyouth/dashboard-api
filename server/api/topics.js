@@ -181,9 +181,14 @@ internals.applyRoutes = function (server, next) {
     handler (request, reply) {
       let topic = request.pre.topic
 
-      topic = topic.destroy().return()
+      let keywords = topic.get('keywords')
+      let promise = topic.destroy().then(() => {
+        if (keywords.length) {
+          Twitter.untrack(keywords)
+        }
+      })
 
-      reply(topic).code(204)
+      reply(promise).code(204)
     }
   })
 
