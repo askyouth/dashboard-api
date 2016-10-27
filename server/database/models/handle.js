@@ -7,8 +7,7 @@ module.exports = (BaseModel, bookshelf) => BaseModel.extend({
   tableName: 'handle',
 
   schema: {
-    id: Joi.number().integer(),
-    uid: Joi.string().required(),
+    id: Joi.string().required(),
     username: Joi.string().required(),
     name: Joi.string().required(),
     profile: Joi.object({

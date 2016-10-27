@@ -148,7 +148,7 @@ internals.init = function (server, options, next) {
   ).spread((topics, handles) => {
     topics = topics.pluck('keywords')
       .reduce((memo, keywords) => memo.concat(keywords), [])
-    handles = handles.pluck('uid')
+    handles = handles.pluck('id')
 
     topics.length && track(topics)
     handles.length && follow(handles)

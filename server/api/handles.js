@@ -124,7 +124,7 @@ internals.applyRoutes = (server, next) => {
         })
       ).spread((twitterProfile, kloutIdentity) => {
         return Handle.forge({
-          uid: '' + twitterProfile.id,
+          id: '' + twitterProfile.id,
           username: twitterProfile.screen_name,
           name: twitterProfile.name,
           profile: {
@@ -133,9 +133,9 @@ internals.applyRoutes = (server, next) => {
           },
           camp_id: campId,
           klout_id: kloutIdentity.id
-        }).save()
+        }).save(null, { method: 'insert' })
       }).tap((handle) => {
-        Twitter.follow(handle.get('uid'))
+        Twitter.follow(handle.get('id'))
       }).then((handle) => handle.refresh({ withRelated: ['camp'] }))
 
       reply(handle)
@@ -179,7 +179,6 @@ internals.applyRoutes = (server, next) => {
           handleId: Joi.number().integer().required()
         },
         payload: {
-          uid: Joi.string(),
           name: Joi.string(),
           username: Joi.string(),
           profile: Joi.object(),

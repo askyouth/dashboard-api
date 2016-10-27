@@ -34,18 +34,15 @@ const topics = [
 ]
 
 const handles = [
-  { uid: '123', username: 'test1', name: 'Test One' },
-  { uid: '456', username: 'test2', name: 'Test Two' }
+  { id: '123', username: 'test1', name: 'Test One' },
+  { id: '456', username: 'test2', name: 'Test Two' }
 ]
 
 function initDatabase () {
   db = Knex(Config.get('database.knex'))
   return db.migrate.latest().then(() => {
-    let data = topics.map((row) => Object.assign({}, row, {
-      keywords: JSON.stringify(row.keywords)
-    }))
     return Promise.all([
-      db('topic').insert(data).returning('id'),
+      db('topic').insert(topics).returning('id'),
       db('handle').insert(handles).returning('id')
     ])
   }).spread((topicIds, handleIds) => {

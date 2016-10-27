@@ -33,8 +33,8 @@ function initServer (plugins) {
 }
 
 const handles = [
-  { uid: '123', username: 'test1', name: 'Test One', camp_id: null, profile: {}, klout_score: 12.11, created_at: new Date() },
-  { uid: '456', username: 'test2', name: 'Test Two', camp_id: null, profile: {}, klout_score: 23.11, created_at: new Date('2000-01-01') }
+  { id: '123', username: 'test1', name: 'Test One', camp_id: null, profile: {}, klout_score: 12.11, created_at: new Date() },
+  { id: '456', username: 'test2', name: 'Test Two', camp_id: null, profile: {}, klout_score: 23.11, created_at: new Date('2000-01-01') }
 ]
 
 const camps = [
@@ -117,7 +117,7 @@ lab.experiment('Handles result list', () => {
       Code.expect(response.statusCode).to.equal(200)
       let result = JSON.parse(response.payload)
       Code.expect(result).to.be.an.array().and.have.length(2)
-      Code.expect(result[0].uid).to.equal(handles[0].uid)
+      Code.expect(result[0].id).to.equal(handles[0].id)
       Code.expect(result[0].camp).to.be.an.object().and.equal(camps[0])
     })
   })
@@ -132,7 +132,7 @@ lab.experiment('Handles result list', () => {
       Code.expect(response.statusCode).to.equal(200)
       let result = JSON.parse(response.payload)
       Code.expect(result).to.be.an.array().and.have.length(1)
-      Code.expect(result[0].uid).to.equal(handles[1].uid)
+      Code.expect(result[0].id).to.equal(handles[1].id)
     })
   })
 
@@ -351,7 +351,7 @@ lab.experiment('Handle get', () => {
     return server.inject(request).then((response) => {
       Code.expect(response.statusCode).to.equal(200)
       let result = JSON.parse(response.payload)
-      Code.expect(result.uid).to.equal(handles[0].uid)
+      Code.expect(result.id).to.equal(handles[0].id)
       Code.expect(result.username).to.equal(handles[0].username)
       Code.expect(result.camp).to.equal(camps[0])
     })
@@ -377,7 +377,7 @@ lab.experiment('Handle get', () => {
     return server.inject(request).then((response) => {
       Code.expect(response.statusCode).to.equal(200)
       let result = JSON.parse(response.payload)
-      Code.expect(result.uid).to.equal(handles[0].uid)
+      Code.expect(result.id).to.equal(handles[0].id)
       Code.expect(result.topics).to.be.an.array().and.have.length(2)
       Code.expect(result.topics[0].name).to.equal(handles[0].topics[0].name)
       Code.expect(result.topics[1].name).to.equal(handles[0].topics[1].name)
