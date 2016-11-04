@@ -12,7 +12,7 @@
         "host":     "localhost",
         "user":     "postgres",
         "password": "postgres",
-        "database": "ask_dashboard_dev",
+        "database": "ask_dashboard",
         "port":     5432,
         "charset":  "utf8"
       },

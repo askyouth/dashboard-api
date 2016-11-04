@@ -4,6 +4,13 @@
       "uri": "http://ask-dashboard.local"
     }
   },
+  "database": {
+    "knex": {
+      "connection": {
+        "database": "ask_dashboard_dev"
+      }
+    }
+  },
   "twitter": {
     "auth": {
       "consumer_key":        "yOjQ8bmKNUq0WzWFdVl6OoMmj",
