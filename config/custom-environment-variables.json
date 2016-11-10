@@ -5,10 +5,24 @@
       "uri":  "CONNECTION_API_URI"
     }
   },
+  "auth": {
+    "secret": "JWT_SECRET"
+  },
   "database": {
     "knex": {
       "connection": "DATABASE_URL"
     }
+  },
+  "mail": {
+    "transport": {
+      "host": "SMTP_HOST",
+      "port": "SMTP_PORT",
+      "auth": {
+        "user": "SMTP_USER",
+        "pass": "SMTP_PASS"
+      }
+    },
+    "fromAddress": ""
   },
   "twitter": {
     "auth": {

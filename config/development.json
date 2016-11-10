@@ -4,6 +4,9 @@
       "uri": "http://ask-dashboard.local"
     }
   },
+  "auth": {
+    "secret": "dcnu8yxn7etn7d"
+  },
   "database": {
     "knex": {
       "connection": {

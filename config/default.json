@@ -5,6 +5,9 @@
       "uri":  "http://ask-dashboard.com"
     }
   },
+  "auth": {
+    "secret": ""
+  },
   "database": {
     "knex": {
       "client": "pg",
@@ -28,6 +31,19 @@
         "directory": "./server/database/seeds"
       }
     }
+  },
+  "mail": {
+    "transport": {
+      "host": "smtp.gmail.com",
+      "port": 465,
+      "secure": true,
+      "auth": {
+        "user": "",
+        "pass": ""
+      }
+    },
+    "fromAddress": "burgulgoth@gmail.com",
+    "templateDir": "./server/services/mail/templates"
   },
   "twitter": {
     "auth": {

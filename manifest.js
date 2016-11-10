@@ -72,6 +72,15 @@ const manifest = {
   }, {
     plugin: 'tv'
   }, {
+    plugin: 'hapi-auth-jwt2'
+  }, {
+    plugin: {
+      register: './server/auth',
+      options: {
+        secret: Config.get('auth.secret')
+      }
+    }
+  }, {
     plugin: {
       register: './server/database',
       options: {
@@ -82,13 +91,18 @@ const manifest = {
       }
     }
   }, {
-    plugin: './server/errors'
+    plugin: './server/api/auth'
   }, {
     plugin: './server/api/handles'
   }, {
     plugin: './server/api/topics'
   }, {
     plugin: './server/api/tweets'
+  }, {
+    plugin: {
+      register: './server/services/mail',
+      options: Config.getp('mail')
+    }
   }, {
     plugin: {
       register: './server/services/twitter',
