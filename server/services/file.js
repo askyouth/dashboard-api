@@ -2,9 +2,13 @@
 
 // Module dependencies.
 const Joi = require('joi')
-const path = require('path')
-const fs = require('fs-blob-store')
+const Path = require('path')
+const Uuid = require('node-uuid')
+const Config = require('config')
 const Promise = require('bluebird')
+const BlobStore = require('fs-blob-store')
+
+Promise.promisifyAll(BlobStore.prototype)
 
 exports.register = function (server, options, next) {
   const schema = {
@@ -17,39 +21,43 @@ exports.register = function (server, options, next) {
     return next(err)
   }
 
-  const dir = options.directory
-  const blobs = fs(dir)
+  const blobs = new BlobStore(options.directory)
+  const baseUrl = Config.get('connection.api.uri')
+
+  function path (key) {
+    return Path.join(options.directory, key)
+  }
+
+  function url (key) {
+    return `${baseUrl}/uploads/${key}`
+  }
 
   function create (rs, options) {
     return new Promise((resolve, reject) => {
-      let name = options.name
-        ? `${generate(1)}-${options.name}}`
-        : generate(4)
-      let ws = blobs.createWriteStream(name)
+      let key = Uuid.v1()
+      options.name && (key = `${key}-${options.name}`)
+      let ws = blobs.createWriteStream(key)
       ws.on('error', reject)
       rs.pipe(ws)
       rs.on('end', (err) => {
         if (err) return reject(err)
-        console.log(options.directory)
-        console.log(name)
         resolve({
-          name: name,
-          filename: path.join(dir, name)
+          key: key,
+          url: url(key),
+          filename: path(key)
         })
       })
     })
   }
 
-  function generate (num) {
-    num || (num = 4)
-    let str = ''
-    for (let i = 0; i < num; i++) {
-      str += Math.random().toString(16).slice(4)
-    }
-    return str
+  function remove (options) {
+    return blobs.removeAsync(options)
   }
 
+  server.expose('url', url)
+  server.expose('path', path)
   server.expose('create', create)
+  server.expose('remove', remove)
 
   next()
 }

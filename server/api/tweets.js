@@ -14,6 +14,7 @@ internals.dependencies = ['hapi-io', 'database', 'services/twitter', 'services/f
 internals.applyRoutes = (server, next) => {
   const Database = server.plugins.database
   const Tweet = Database.model('Tweet')
+  const Infographic = Database.model('Infographic')
   const File = server.plugins['services/file']
   const Twitter = server.plugins['services/twitter']
 
@@ -94,19 +95,37 @@ internals.applyRoutes = (server, next) => {
         payload: {
           text: Joi.string().required(),
           replyStatusId: Joi.string(),
+          infographicId: Joi.number().integer(),
           file: Joi.any()
         }
-      }
+      },
+      pre: [{
+        assign: 'file',
+        method (request, reply) {
+          let stream = request.payload.file
+          if (!stream) return reply()
+          let file = File.create(stream, { name: stream.hapi.filename })
+          reply(file)
+        }
+      }, {
+        assign: 'infographic',
+        method (request, reply) {
+          let infographicId = request.payload.infographicId
+          if (!infographicId) return reply()
+          let infographic = Infographic.forge({ id: infographicId }).fetch()
+          reply(infographic)
+        }
+      }]
     },
     handler (request, reply) {
       let text = request.payload.text
       let replyStatusId = request.payload.replyStatusId
-      let file = request.payload.file
+      let file = request.pre.file || {}
+      let infographic = request.pre.infographic
+      let filename = file.filename || (infographic && File.path(infographic.get('name')))
 
-      let tweet = Promise.resolve().then(() => {
-        if (!file) return
-        return File.create(file, { name: file.hapi.name })
-          .then((meta) => Twitter.upload(meta.filename))
+      let tweet = Promise.resolve(filename).then(() => {
+        if (filename) return Twitter.upload(filename)
       }).then((media) => Twitter.statusUpdate({
         status: text,
         in_reply_to_status_id: replyStatusId,

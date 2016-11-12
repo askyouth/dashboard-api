@@ -99,6 +99,8 @@ const manifest = {
   }, {
     plugin: './server/api/tweets'
   }, {
+    plugin: './server/api/infographics'
+  }, {
     plugin: {
       register: './server/services/mail',
       options: Config.getp('mail')
