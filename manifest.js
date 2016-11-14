@@ -93,6 +93,8 @@ const manifest = {
   }, {
     plugin: './server/api/auth'
   }, {
+    plugin: './server/api/account'
+  }, {
     plugin: './server/api/handles'
   }, {
     plugin: './server/api/topics'
