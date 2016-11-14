@@ -68,7 +68,7 @@ internals.applyRoutes = (server, next) => {
           qb.limit(limit)
         })
         .orderBy('created_at', 'desc')
-        .fetch()
+        .fetch({ withRelated: ['handle'] })
 
       if (socket) {
         socket.leaveAll()
