@@ -71,12 +71,6 @@ internals.applyRoutes = (server, next) => {
 
       let handles = Handle
         .query((qb) => {
-          if (filter.search) {
-            qb.where(function () {
-              this.where('handle.username', 'ilike', `%${filter.search}%`)
-                .orWhere('handle.name', 'ilike', `%${filter.search}%`)
-            })
-          }
           if (filter.camp) {
             qb.where('handle.camp_id', '=', filter.camp)
           }
@@ -84,6 +78,12 @@ internals.applyRoutes = (server, next) => {
             qb.innerJoin('handle_topic', 'handle.id', 'handle_topic.handle_id')
             qb.groupBy('handle.id')
             qb.where('handle_topic.topic_id', filter.topic)
+          }
+          if (filter.search) {
+            qb.where(function () {
+              this.where('handle.username', 'ilike', `%${filter.search}%`)
+                .orWhere('handle.name', 'ilike', `%${filter.search}%`)
+            })
           }
         })
         .orderBy(sort, sortOrder)

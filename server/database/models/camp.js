@@ -15,4 +15,8 @@ module.exports = (BaseModel, bookshelf) => BaseModel.extend({
   handles () {
     return this.hasMany('Handle')
   }
+}, {
+  POLICY_MAKER: 1,
+  YOUTH: 2,
+  BROKER: 3
 })

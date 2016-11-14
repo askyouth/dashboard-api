@@ -22,7 +22,7 @@ module.exports = (BaseModel, bookshelf) => BaseModel.extend({
       description: Joi.string().allow(null),
       profile_image_url: Joi.string(),
       verified: Joi.boolean(),
-      created_at: Joi.date().timestamp()
+      created_at: Joi.any()
     }),
     favorited: Joi.boolean(),
     retweeted: Joi.boolean(),
@@ -31,6 +31,7 @@ module.exports = (BaseModel, bookshelf) => BaseModel.extend({
     parent_id: Joi.string().allow(null),
     in_reply_to_user_id: Joi.string().allow(null),
     in_reply_to_screen_name: Joi.string().allow(null),
+    contribution_id: Joi.number().integer().allow(null),
     created_at: Joi.date().timestamp()
   },
 
@@ -49,5 +50,9 @@ module.exports = (BaseModel, bookshelf) => BaseModel.extend({
 
   topics () {
     return this.belongsToMany('Topic', 'tweet_topic')
+  },
+
+  contribution () {
+    return this.belongsTo('Contribution', 'contribution_id')
   }
 })

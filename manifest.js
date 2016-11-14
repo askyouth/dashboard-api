@@ -99,7 +99,13 @@ const manifest = {
   }, {
     plugin: './server/api/tweets'
   }, {
+    plugin: './server/api/contributions'
+  }, {
     plugin: './server/api/infographics'
+  }, {
+    plugin: './server/services/topic'
+  }, {
+    plugin: './server/services/contribution'
   }, {
     plugin: {
       register: './server/services/mail',

@@ -13,14 +13,16 @@ Twitter.prototype.postMediaChunkedAsync = Promise.promisify(Twitter.prototype.po
 
 const internals = {}
 
-internals.dependencies = ['hapi-io', 'database']
+internals.dependencies = ['hapi-io', 'database', 'services/topic', 'services/contribution']
 
 internals.init = function (server, options, next) {
-  const IO = server.plugins['hapi-io'].io
   const Database = server.plugins.database
   const Tweet = Database.model('Tweet')
   const Topic = Database.model('Topic')
   const Handle = Database.model('Handle')
+  const IO = server.plugins['hapi-io'].io
+  const TopicService = server.plugins['services/topic']
+  const ContributionService = server.plugins['services/contribution']
   const log = server.log.bind(server, ['services', 'twitter'])
 
   const twitter = new Twitter(options.auth)
@@ -47,7 +49,11 @@ internals.init = function (server, options, next) {
 
   function tweetHandler (tweet) {
     storeTweet(tweet)
-      .then((tweet) => [tweet, processTopics(tweet)])
+      .then((tweet) => [
+        tweet,
+        TopicService.process(tweet),
+        ContributionService.process(tweet)
+      ])
       .spread(broadcast)
       .catch((err) => log(`error: ${err.message}`))
   }
@@ -57,28 +63,14 @@ internals.init = function (server, options, next) {
       .save(null, { method: 'insert' })
   }
 
-  function processTopics (tweet) {
-    return Topic
-      .collection()
-      .query('where', 'keywords', '!=', '{}')
-      .fetch()
-      .then((topics) => {
-        let tokens = _.uniq(tweet.get('text').match(/\w+/g)).map(_.toLower)
-        let matched = topics.filter((topic) => _.intersection(
-          tokens,
-          topic.get('keywords').map(_.toLower)
-        ).length)
-
-        if (!matched.length) return []
-        return tweet.topics().attach(matched)
-      })
-  }
-
-  function broadcast (tweet, topics) {
+  function broadcast (tweet, topics, contribution) {
     tweet = tweet.toJSON()
     IO.in('timeline').emit('tweets:new', tweet)
     IO.in(`handle:${tweet.user_id}`).emit('tweets:new', tweet)
     topics.forEach((topic) => IO.in(`topic:${topic.id}`).emit('tweets:new', tweet))
+    if (contribution) {
+      IO.in(`contribution:${contribution.id}`).emit('tweets:new', tweet)
+    }
   }
 
   function track (keywords) {
@@ -111,8 +103,6 @@ internals.init = function (server, options, next) {
 
   function statusUpdate (opts) {
     return twitter.postAsync('statuses/update', opts)
-      .then(storeTweet)
-      .tap((tweet) => processTopics(tweet).then((topics) => broadcast(tweet, topics)))
   }
 
   function statusRetweet (id) {
@@ -146,12 +136,16 @@ internals.init = function (server, options, next) {
     Topic.collection().fetch(),
     Handle.collection().fetch()
   ).spread((topics, handles) => {
-    topics = topics.pluck('keywords')
-      .reduce((memo, keywords) => memo.concat(keywords), [])
-    handles = handles.pluck('id')
+    if (topics.length) {
+      topics = topics.pluck('keywords')
+        .reduce((memo, keywords) => memo.concat(keywords), [])
+      track(topics)
+    }
 
-    topics.length && track(topics)
-    handles.length && follow(handles)
+    if (handles.length) {
+      follow(handles.pluck('id'))
+      track(handles.pluck('username').map((username) => `@${username}`))
+    }
 
     reconnect()
   }).nodeify(next)
