@@ -153,21 +153,6 @@ internals.applyRoutes = (server, next) => {
     }
   })
 
-  // TEST!!
-  server.route({
-    method: 'GET',
-    path: '/contributions/{tweetId}/test',
-    handler (request, reply) {
-      let tweetId = request.params.tweetId
-      let ContributionService = server.plugins['services/contribution']
-      let result = Database.model('Tweet').forge({ id: tweetId })
-        .fetch({ require: true })
-        .then((tweet) => ContributionService.process(tweet))
-
-      reply(result)
-    }
-  })
-
   next()
 }
 
