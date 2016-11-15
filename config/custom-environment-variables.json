@@ -22,7 +22,7 @@
         "pass": "SMTP_PASS"
       }
     },
-    "fromAddress": ""
+    "fromAddress": "MAIL_FROM_ADDRESS"
   },
   "twitter": {
     "auth": {

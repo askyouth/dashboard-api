@@ -42,7 +42,7 @@
         "pass": ""
       }
     },
-    "fromAddress": "burgulgoth@gmail.com",
+    "fromAddress": "dashboard@ask-project.eu",
     "templateDir": "./server/services/mail/templates"
   },
   "twitter": {
