@@ -105,6 +105,8 @@ const manifest = {
   }, {
     plugin: './server/api/infographics'
   }, {
+    plugin: './server/api/analytics'
+  }, {
     plugin: './server/services/topic'
   }, {
     plugin: './server/services/contribution'
