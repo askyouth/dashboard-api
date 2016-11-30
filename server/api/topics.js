@@ -5,10 +5,15 @@ const Joi = require('joi')
 
 const internals = {}
 
-internals.dependencies = ['database', 'services/twitter']
+internals.dependencies = [
+  'database',
+  'services/topic',
+  'services/twitter'
+]
 
 internals.applyRoutes = function (server, next) {
   const Twitter = server.plugins['services/twitter']
+  const TopicService = server.plugins['services/topic']
   const Database = server.plugins.database
   const Topic = Database.model('Topic')
 
@@ -38,21 +43,13 @@ internals.applyRoutes = function (server, next) {
       let sortOrder = request.query.sortOrder
       let related = request.query.related
 
-      let topics = Topic
-        .query((qb) => {
-          if (filter.search) {
-            qb.where(function () {
-              this.where('topic.name', 'ilike', `%${filter.search}%`)
-                .orWhere('topic.description', 'ilike', `%${filter.search}%`)
-            })
-          }
-        })
-        .orderBy(sort, sortOrder)
-        .fetchPage({
-          page: page,
-          pageSize: pageSize,
-          withRelated: related
-        })
+      let topics = TopicService.fetch(filter, {
+        sortBy: sort,
+        sortOrder: sortOrder,
+        page: page,
+        pageSize: pageSize,
+        withRelated: related
+      })
 
       reply(topics)
     }

@@ -9,13 +9,20 @@ const BadRequestError = Boom.badRequest
 
 const internals = {}
 
-internals.dependencies = ['hapi-io', 'database', 'services/twitter', 'services/file']
+internals.dependencies = [
+  'hapi-io',
+  'database',
+  'services/tweet',
+  'services/twitter',
+  'services/file'
+]
 
 internals.applyRoutes = (server, next) => {
   const Database = server.plugins.database
   const Tweet = Database.model('Tweet')
   const Infographic = Database.model('Infographic')
   const File = server.plugins['services/file']
+  const Tweets = server.plugins['services/tweet']
   const Twitter = server.plugins['services/twitter']
 
   function loadTweet (request, reply) {
@@ -54,22 +61,13 @@ internals.applyRoutes = (server, next) => {
       let userId = request.query.userId
       let topicId = request.query.topicId
       let limit = request.query.limit
+      let withRelated = ['handle']
+
+      let query = { maxId, userId, topicId }
+      let opts = { limit, withRelated }
+      let tweets = Tweets.fetch(query, opts)
+
       let socket = request.plugins['hapi-io'].socket
-
-      let tweets = Tweet.collection()
-        .query((qb) => {
-          if (maxId) qb.andWhere('tweet.id', '<', maxId)
-          if (userId) qb.andWhere('tweet.user_id', '=', userId)
-          if (topicId) {
-            qb.innerJoin('tweet_topic', 'tweet.id', 'tweet_topic.tweet_id')
-            qb.groupBy('tweet.id')
-            qb.where('tweet_topic.topic_id', topicId)
-          }
-          qb.limit(limit)
-        })
-        .orderBy('created_at', 'desc')
-        .fetch({ withRelated: ['handle'] })
-
       if (socket) {
         socket.leaveAll()
         if (userId) socket.join(`user:${userId}`)

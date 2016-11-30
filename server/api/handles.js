@@ -10,11 +10,17 @@ const BadRequestError = Boom.badRequest
 
 const internals = {}
 
-internals.dependencies = ['database', 'services/twitter', 'services/klout']
+internals.dependencies = [
+  'database',
+  'services/handle',
+  'services/twitter',
+  'services/klout'
+]
 
 internals.applyRoutes = (server, next) => {
   const Klout = server.plugins['services/klout']
   const Twitter = server.plugins['services/twitter']
+  const HandleService = server.plugins['services/handle']
   const Database = server.plugins.database
   const Handle = Database.model('Handle')
   const Topic = Database.model('Topic')
@@ -69,29 +75,13 @@ internals.applyRoutes = (server, next) => {
       let sortOrder = request.query.sortOrder
       let related = ['camp'].concat(request.query.related)
 
-      let handles = Handle
-        .query((qb) => {
-          if (filter.camp) {
-            qb.where('handle.camp_id', '=', filter.camp)
-          }
-          if (filter.topic) {
-            qb.innerJoin('handle_topic', 'handle.id', 'handle_topic.handle_id')
-            qb.groupBy('handle.id')
-            qb.where('handle_topic.topic_id', filter.topic)
-          }
-          if (filter.search) {
-            qb.where(function () {
-              this.where('handle.username', 'ilike', `%${filter.search}%`)
-                .orWhere('handle.name', 'ilike', `%${filter.search}%`)
-            })
-          }
-        })
-        .orderBy(sort, sortOrder)
-        .fetchPage({
-          page: page,
-          pageSize: pageSize,
-          withRelated: related
-        })
+      let handles = HandleService.fetch(filter, {
+        sortBy: sort,
+        sortOrder: sortOrder,
+        page: page,
+        pageSize: pageSize,
+        withRelated: related
+      })
 
       reply(handles)
     }

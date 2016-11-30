@@ -107,6 +107,12 @@ const manifest = {
   }, {
     plugin: './server/api/analytics'
   }, {
+    plugin: './server/api/search'
+  }, {
+    plugin: './server/services/tweet'
+  }, {
+    plugin: './server/services/handle'
+  }, {
     plugin: './server/services/topic'
   }, {
     plugin: './server/services/contribution'

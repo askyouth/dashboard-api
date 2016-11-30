@@ -5,11 +5,13 @@ const _ = require('lodash')
 
 const internals = {}
 
-internals.dependencies = ['database']
+internals.dependencies = [
+  'database'
+]
 
 exports.register = function (server, options, next) {
   const Database = server.plugins.database
-  const Topic = Database.model('Topic')
+  const Handle = Database.model('Handle')
 
   function fetch (query, opts) {
     query || (query = {})
@@ -23,12 +25,20 @@ exports.register = function (server, options, next) {
       pageSize: pageSize
     }, _.pick(opts, ['withRelated']))
 
-    return Topic
+    return Handle
       .query((qb) => {
+        if (query.camp) {
+          qb.where('handle.camp_id', '=', query.camp)
+        }
+        if (query.topic) {
+          qb.innerJoin('handle_topic', 'handle.id', 'handle_topic.handle_id')
+          qb.groupBy('handle.id')
+          qb.where('handle_topic.topic_id', query.topic)
+        }
         if (query.search) {
           qb.where(function () {
-            this.where('topic.name', 'ilike', `%${query.search}%`)
-              .orWhere('topic.description', 'ilike', `%${query.search}%`)
+            this.where('handle.username', 'ilike', `%${query.search}%`)
+              .orWhere('handle.name', 'ilike', `%${query.search}%`)
           })
         }
       })
@@ -36,30 +46,12 @@ exports.register = function (server, options, next) {
       .fetchPage(fetchOpts)
   }
 
-  function process (tweet) {
-    return Topic
-      .collection()
-      .query('where', 'keywords', '!=', '{}')
-      .fetch()
-      .then((topics) => {
-        let tokens = _.uniq(tweet.get('text').match(/\w+/g)).map(_.toLower)
-        let matched = topics.filter((topic) => _.intersection(
-          tokens,
-          topic.get('keywords').map(_.toLower)
-        ).length)
-
-        if (!matched.length) return []
-        return tweet.topics().attach(matched)
-      })
-  }
-
   server.expose('fetch', fetch)
-  server.expose('process', process)
 
   next()
 }
 
 exports.register.attributes = {
-  name: 'services/topic',
+  name: 'services/handle',
   dependencies: internals.dependencies
 }
