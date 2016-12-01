@@ -46,7 +46,9 @@ internals.applyRoutes = (server, next) => {
           maxId: Joi.string(),
           userId: Joi.string(),
           topicId: Joi.number().integer(),
-          limit: Joi.number().integer().default(20)
+          limit: Joi.number().integer().default(20),
+          sortBy: Joi.string().default('created_at'),
+          sortOrder: Joi.string().default('desc')
         },
         options: {
           allowUnknown: true
@@ -61,10 +63,12 @@ internals.applyRoutes = (server, next) => {
       let userId = request.query.userId
       let topicId = request.query.topicId
       let limit = request.query.limit
+      let sortBy = request.query.sortBy
+      let sortOrder = request.query.sortOrder
       let withRelated = ['handle']
 
       let query = { maxId, userId, topicId }
-      let opts = { limit, withRelated }
+      let opts = { limit, sortBy, sortOrder, withRelated }
       let tweets = Tweets.fetch(query, opts)
 
       let socket = request.plugins['hapi-io'].socket
