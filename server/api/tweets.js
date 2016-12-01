@@ -1,9 +1,9 @@
 'use strict'
 
 // Module dependencies.
+const Fs = require('fs')
 const Joi = require('joi')
 const Boom = require('boom')
-const Promise = require('bluebird')
 const NotFoundError = Boom.notFound
 const BadRequestError = Boom.badRequest
 
@@ -84,7 +84,7 @@ internals.applyRoutes = (server, next) => {
     path: '/tweets',
     config: {
       payload: {
-        output: 'stream',
+        output: 'file',
         parse: true,
         maxBytes: 10 * 1024 * 1024,
         allow: 'multipart/form-data'
@@ -100,35 +100,48 @@ internals.applyRoutes = (server, next) => {
       pre: [{
         assign: 'file',
         method (request, reply) {
-          let stream = request.payload.file
-          if (!stream) return reply()
-          let file = File.create(stream, { name: stream.hapi.filename })
-          reply(file)
+          let file = request.payload.file
+          if (!file) return reply()
+
+          let stream = Fs.createReadStream(file.path)
+          let media = Twitter.upload(stream, {
+            mediaSize: file.bytes
+          }).finally(() => {
+            Fs.unlinkSync(file.path)
+          })
+
+          reply(media)
         }
       }, {
         assign: 'infographic',
         method (request, reply) {
           let infographicId = request.payload.infographicId
           if (!infographicId) return reply()
-          let infographic = Infographic.forge({ id: infographicId }).fetch()
-          reply(infographic)
+
+          let media = Infographic.forge({ id: infographicId })
+            .fetch({ require: true })
+            .then((infographic) => {
+              let path = File.path(infographic.get('name'))
+              let stream = Fs.createReadStream(path)
+              return Twitter.upload(stream, {
+                mediaSize: infographic.get('file_size')
+              })
+            })
+
+          reply(media)
         }
       }]
     },
     handler (request, reply) {
       let text = request.payload.text
       let replyStatusId = request.payload.replyStatusId
-      let file = request.pre.file || {}
-      let infographic = request.pre.infographic
-      let filename = file.filename || (infographic && File.path(infographic.get('name')))
+      let mediaId = request.pre.file || request.pre.infographic
 
-      let tweet = Promise.resolve(filename).then(() => {
-        if (filename) return Twitter.upload(filename)
-      }).then((media) => Twitter.statusUpdate({
+      let tweet = Twitter.statusUpdate({
         status: text,
         in_reply_to_status_id: replyStatusId,
-        media_ids: media && media.media_id_string
-      }))
+        media_ids: mediaId
+      })
 
       reply(tweet)
     }

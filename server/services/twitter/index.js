@@ -2,14 +2,13 @@
 
 // Module dependencies.
 const Joi = require('joi')
-const Twitter = require('twit')
+const Twitter = require('twitter')
 const TwitterStream = require('node-tweet-stream')
+const TwitterUploadStream = require('./upload-stream')
 const Promise = require('bluebird')
 const _ = require('lodash')
 
-Twitter.prototype.getAsync = Promise.promisify(Twitter.prototype.get)
-Twitter.prototype.postAsync = Promise.promisify(Twitter.prototype.post)
-Twitter.prototype.postMediaChunkedAsync = Promise.promisify(Twitter.prototype.postMediaChunked)
+Promise.promisifyAll(Twitter.prototype)
 
 const internals = {}
 
@@ -25,7 +24,12 @@ internals.init = function (server, options, next) {
   const ContributionService = server.plugins['services/contribution']
   const log = server.log.bind(server, ['services', 'twitter'])
 
-  const twitter = new Twitter(options.auth)
+  const twitter = new Twitter({
+    consumer_key: options.auth.consumer_key,
+    consumer_secret: options.auth.consumer_secret,
+    access_token_key: options.auth.access_token,
+    access_token_secret: options.auth.access_token_secret
+  })
   const stream = new TwitterStream({
     consumer_key: options.auth.consumer_key,
     consumer_secret: options.auth.consumer_secret,
@@ -37,8 +41,8 @@ internals.init = function (server, options, next) {
 
   const reconnect = _.throttle(() => {
     log('reconnect')
-    stream.reconnect()
-  }, 30 * 1000, {
+    //stream.reconnect()
+  }, 1 * 1000, {
     leading: false,
     trailing: true
   })
@@ -117,8 +121,11 @@ internals.init = function (server, options, next) {
     return twitter.postAsync('favorites/destroy', { id: id })
   }
 
-  function upload (filename) {
-    return twitter.postMediaChunkedAsync({ file_path: filename })
+  function upload (stream, opts) {
+    return Promise.fromCallback((cb) => {
+      let upload = new TwitterUploadStream(twitter, opts, cb)
+      stream.pipe(upload).on('error', cb)
+    })
   }
 
   server.expose('track', track)

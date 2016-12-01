@@ -51,7 +51,7 @@
     "nodemailer-markdown": "^1.0.1",
     "pg": "^6.1.0",
     "tv": "^5.0.2",
-    "twit": "^2.2.5",
+    "twitter": "^1.4.0",
     "vision": "^4.1.0"
   },
   "devDependencies": {

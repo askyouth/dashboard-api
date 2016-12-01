@@ -7,6 +7,7 @@ const Uuid = require('node-uuid')
 const Config = require('config')
 const Promise = require('bluebird')
 const BlobStore = require('fs-blob-store')
+const StreamLength = require('./stream-length')
 
 Promise.promisifyAll(BlobStore.prototype)
 
@@ -33,20 +34,20 @@ exports.register = function (server, options, next) {
   }
 
   function create (rs, options) {
-    return new Promise((resolve, reject) => {
+    return Promise.fromCallback((cb) => {
       let key = Uuid.v1()
       options.name && (key = `${key}-${options.name}`)
-      let ws = blobs.createWriteStream(key)
-      ws.on('error', reject)
-      rs.pipe(ws)
-      rs.on('end', (err) => {
-        if (err) return reject(err)
-        resolve({
+      let ls = new StreamLength()
+      let ws = blobs.createWriteStream(key, (err) => {
+        if (err) return cb(err)
+        cb(null, {
           key: key,
           url: url(key),
-          filename: path(key)
+          filename: path(key),
+          size: ls.length
         })
       })
+      rs.pipe(ls).pipe(ws)
     })
   }
 
