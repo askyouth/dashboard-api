@@ -41,8 +41,8 @@ internals.init = function (server, options, next) {
 
   const reconnect = _.throttle(() => {
     log('reconnect')
-    //stream.reconnect()
-  }, 1 * 1000, {
+    stream.reconnect()
+  }, 30 * 1000, {
     leading: false,
     trailing: true
   })
