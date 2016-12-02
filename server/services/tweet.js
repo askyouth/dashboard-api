@@ -29,6 +29,9 @@ internals.init = (server, next) => {
           qb.groupBy('tweet.id')
           qb.where('tweet_topic.topic_id', query.topicId)
         }
+        if (query.search) {
+          qb.where('text', 'ilike', `%${query.search}%`)
+        }
         queryFn(qb)
         qb.limit(limit)
       })
