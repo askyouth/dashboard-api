@@ -16,8 +16,8 @@ exports.register = function (server, options, next) {
       port: Joi.number().integer().required(),
       secure: Joi.boolean(),
       auth: Joi.object({
-        user: Joi.string().required(),
-        pass: Joi.string().required()
+        user: Joi.string().allow(''),
+        pass: Joi.string().allow('')
       })
     }),
     fromAddress: Joi.string().email(),
