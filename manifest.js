@@ -133,7 +133,7 @@ const manifest = {
       register: './server/services/klout',
       options: {
         auth: Config.get('klout.auth'),
-        interval: +Config.get('klout.interval')
+        interval: Config.get('klout.interval')
       }
     }
   }, {

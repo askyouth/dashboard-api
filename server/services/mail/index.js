@@ -25,7 +25,7 @@ exports.register = function (server, options, next) {
   }
 
   try {
-    Joi.assert(options, schema, 'Invalid mail options.')
+    options = Joi.attempt(options, schema, 'Invalid mail options.')
   } catch (err) {
     return next(err)
   }
