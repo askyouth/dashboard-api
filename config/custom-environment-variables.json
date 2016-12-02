@@ -17,6 +17,7 @@
     "transport": {
       "host": "SMTP_HOST",
       "port": "SMTP_PORT",
+      "secure": "SMTP_SECURE",
       "auth": {
         "user": "SMTP_USER",
         "pass": "SMTP_PASS"
