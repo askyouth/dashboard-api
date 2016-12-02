@@ -3,6 +3,7 @@
 // Module dependencies.
 const Joi = require('joi')
 const Boom = require('boom')
+const Config = require('config')
 const Errors = require('../errors')
 
 const AuthenticationError = Errors.AuthenticationError
@@ -231,7 +232,7 @@ internals.applyRoutes = (server, next) => {
         let context = {
           user: user.toJSON(),
           token: tokenHash.token,
-          url: 'http://ask-dashboard.local/'
+          url: Config.get('connection.front.uri')
         }
         return Mail.sendEmail(emailOptions, template, context)
       }).return({ message: 'success' })

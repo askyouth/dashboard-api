@@ -1,4 +1,12 @@
 {
+  "connection": {
+    "api": {
+      "uri": "https://ask-dashboard-api.uxpassion.co"
+    },
+    "front": {
+      "uri": "https://ask.uxpassion.co"
+    }
+  },
   "twitter": {
     "auth": {
       "consumer_key":        "VPHO0d3crX3LEXY94dpR4pFyU",

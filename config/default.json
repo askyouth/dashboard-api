@@ -2,7 +2,10 @@
   "connection": {
     "api": {
       "port": 4000,
-      "uri":  "http://ask-dashboard.com"
+      "uri": "http://api.dashboard.ask-project.eu"
+    },
+    "front": {
+      "uri": "http://dashboard.ask-project.eu"
     }
   },
   "auth": {

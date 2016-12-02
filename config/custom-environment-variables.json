@@ -3,6 +3,9 @@
     "api": {
       "port": "PORT",
       "uri":  "CONNECTION_API_URI"
+    },
+    "front": {
+      "uri": "CONNECTION_FRONT_URI"
     }
   },
   "auth": {

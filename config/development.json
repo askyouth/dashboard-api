@@ -2,6 +2,9 @@
   "connection": {
     "api": {
       "uri": "http://ask-dashboard.local"
+    },
+    "front": {
+      "uri": "http://ask.local"
     }
   },
   "auth": {
