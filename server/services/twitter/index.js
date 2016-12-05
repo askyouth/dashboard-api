@@ -101,6 +101,14 @@ internals.init = function (server, options, next) {
     reconnect()
   }
 
+  function verifyCredentials (opts) {
+    opts = Object.assign({
+      skip_status: true,
+      include_entities: false
+    }, opts)
+    return twitter.getAsync('account/verify_credentials', opts)
+  }
+
   function getUserProfile (opts) {
     return twitter.getAsync('users/show', opts)
   }
@@ -132,6 +140,7 @@ internals.init = function (server, options, next) {
   server.expose('untrack', untrack)
   server.expose('follow', follow)
   server.expose('unfollow', unfollow)
+  server.expose('verifyCredentials', verifyCredentials)
   server.expose('getUserProfile', getUserProfile)
   server.expose('statusUpdate', statusUpdate)
   server.expose('statusRetweet', statusRetweet)

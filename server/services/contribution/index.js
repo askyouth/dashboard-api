@@ -154,7 +154,72 @@ exports.register = function (server, options, next) {
       .then((result) => result.contribution)
   }
 
+  function prepareQuery (query) {
+    query || (query = {})
+
+    let cond = {
+      eq: '=',
+      min: '>=',
+      max: '<='
+    }
+
+    return Contribution.query((qb) => {
+      if (query.campId) {
+        qb.where('camp_id', query.campId)
+      }
+      if (query.topicId) {
+        qb.where('topic_id', query.topicId)
+      }
+      if (query.conversationsOnly) {
+        qb.where(function () {
+          this.where('involves_pm', true)
+            .andWhere('involves_youth', true)
+        })
+      }
+      if (query.tweets) {
+        qb.where('tweets', cond[query.tweetsCondition], query.tweets)
+      }
+      if (query.contributors) {
+        let predicate = Database.knex.raw('array_length(contributors, 1)')
+        qb.where(predicate, cond[query.contributorsCondition], query.contributors)
+      }
+      if (query.search) {
+        qb.innerJoin('tweet', 'tweet.contribution_id', 'contribution.id')
+        qb.groupBy('contribution.id')
+        qb.where(function () {
+          this.where('tweet.text', 'ilike', `%${query.search}%`)
+            .orWhereRaw('tweet.user->>\'name\' ilike ?', `%${query.search}%`)
+            .orWhereRaw('tweet.user->>\'screen_name\' ilike ?', `%${query.search}%`)
+        })
+      }
+    })
+  }
+
+  function fetch (query, opts) {
+    opts || (opts = {})
+    let sortBy = opts.sortBy || 'name'
+    let sortOrder = opts.sortOrder || 'asc'
+    let page = opts.page || 1
+    let pageSize = opts.pageSize || 20
+    let fetchOpts = Object.assign({
+      page: page,
+      pageSize: pageSize
+    }, _.pick(opts, ['withRelated']))
+
+    return prepareQuery(query)
+      .orderBy(sortBy, sortOrder)
+      .fetchPage(fetchOpts)
+  }
+
+  function count (query, opts) {
+    return prepareQuery(query)
+      .count()
+      .then((count) => +count)
+  }
+
   server.expose('process', process)
+  server.expose('fetch', fetch)
+  server.expose('count', count)
 
   next()
 }

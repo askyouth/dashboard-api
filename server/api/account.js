@@ -4,18 +4,44 @@
 const Joi = require('joi')
 const Boom = require('boom')
 const Errors = require('../errors')
+const Promise = require('bluebird')
 const _ = require('lodash')
 
 const AuthenticationError = Errors.AuthenticationError
 
 const internals = {}
 
-internals.dependencies = ['database', 'auth']
+internals.dependencies = [
+  'database',
+  'auth',
+  'services/handle'
+]
 
 internals.applyRoutes = (server, next) => {
   const Auth = server.plugins.auth
+  const Handle = server.plugins['services/handle']
+  const Contribution = server.plugins['services/contribution']
   const Database = server.plugins.database
   const User = Database.model('User')
+  const Camp = Database.model('Camp')
+
+  server.route({
+    method: 'GET',
+    path: '/account',
+    config: {
+      description: 'Get account information and system stats'
+    },
+    handler (request, reply) {
+      let data = Promise.props({
+        handle: Handle.fetch({ camp: Camp.BROKER }),
+        youthHandles: Handle.count({ camp: Camp.YOUTH }),
+        policyMakerHandles: Handle.count({ camp: Camp.POLICY_MAKER }),
+        contributions: Contribution.count()
+      })
+
+      reply(data)
+    }
+  })
 
   server.route({
     method: 'POST',

@@ -114,7 +114,7 @@ internals.applyRoutes = (server, next) => {
         })
       ).spread((twitterProfile, kloutIdentity) => {
         return Handle.forge({
-          id: '' + twitterProfile.id,
+          id: twitterProfile.id_str,
           username: twitterProfile.screen_name,
           name: twitterProfile.name,
           profile: {

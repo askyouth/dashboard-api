@@ -8,12 +8,16 @@ const NotFoundError = Boom.notFound
 
 const internals = {}
 
-internals.dependencies = ['database', 'services/contribution']
+internals.dependencies = [
+  'database',
+  'services/contribution'
+]
 
 internals.applyRoutes = (server, next) => {
   const Database = server.plugins.database
   const Camp = Database.model('Camp')
   const Contribution = Database.model('Contribution')
+  const ContributionService = server.plugins['services/contribution']
 
   function loadContribution (request, reply) {
     let contributionId = request.params.contributionId
@@ -57,48 +61,12 @@ internals.applyRoutes = (server, next) => {
       let sort = request.query.sort
       let sortOrder = request.query.sortOrder
 
-      let cond = {
-        eq: '=',
-        min: '>=',
-        max: '<='
-      }
-
-      let contributions = Contribution
-        .query((qb) => {
-          if (filter.campId) {
-            qb.where('camp_id', filter.campId)
-          }
-          if (filter.topicId) {
-            qb.where('topic_id', filter.topicId)
-          }
-          if (filter.conversationsOnly) {
-            qb.where(function () {
-              this.where('involves_pm', true)
-                .andWhere('involves_youth', true)
-            })
-          }
-          if (filter.tweets) {
-            qb.where('tweets', cond[filter.tweetsCondition], filter.tweets)
-          }
-          if (filter.contributors) {
-            let predicate = Database.knex.raw('array_length(contributors, 1)')
-            qb.where(predicate, cond[filter.contributorsCondition], filter.contributors)
-          }
-          if (filter.search) {
-            qb.innerJoin('tweet', 'tweet.contribution_id', 'contribution.id')
-            qb.groupBy('contribution.id')
-            qb.where(function () {
-              this.where('tweet.text', 'ilike', `%${filter.search}%`)
-                .orWhereRaw('tweet.user->>\'name\' ilike ?', `%${filter.search}%`)
-                .orWhereRaw('tweet.user->>\'screen_name\' ilike ?', `%${filter.search}%`)
-            })
-          }
-        })
-        .orderBy(sort, sortOrder)
-        .fetchPage({
-          page: page,
-          pageSize: pageSize
-        })
+      let contributions = ContributionService.fetch(filter, {
+        sortBy: sort,
+        sortOrder: sortOrder,
+        page: page,
+        pageSize: pageSize
+      })
 
       reply(contributions)
     }
