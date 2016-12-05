@@ -19,7 +19,7 @@ internals.applyRoutes = (server, next) => {
 
   server.route({
     method: 'POST',
-    path: '/account',
+    path: '/profile',
     config: {
       description: 'Update account',
       auth: 'jwt',
