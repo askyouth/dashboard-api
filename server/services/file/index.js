@@ -33,6 +33,10 @@ exports.register = function (server, options, next) {
     return `${baseUrl}/uploads/${key}`
   }
 
+  function fetch (key) {
+    return blobs.createReadStream(key)
+  }
+
   function create (rs, options) {
     return Promise.fromCallback((cb) => {
       let key = Uuid.v1()
@@ -57,6 +61,7 @@ exports.register = function (server, options, next) {
 
   server.expose('url', url)
   server.expose('path', path)
+  server.expose('fetch', fetch)
   server.expose('create', create)
   server.expose('remove', remove)
 

@@ -129,6 +129,26 @@ internals.applyRoutes = (server, next) => {
   })
 
   server.route({
+    method: 'GET',
+    path: '/infographics/{infographicId}/download',
+    config: {
+      description: 'Download infographic',
+      pre: [{
+        assign: 'infographic',
+        method: loadInfographic
+      }]
+    },
+    handler (request, reply) {
+      let infographic = request.pre.infographic
+      let file = File.fetch(infographic.get('name'))
+      let dispositionHeader = `attachment; filename=${infographic.get('name')}`
+
+      reply(file)
+        .header('Content-Disposition', dispositionHeader)
+    }
+  })
+
+  server.route({
     method: 'DELETE',
     path: '/infographics/{infographicId}',
     config: {
