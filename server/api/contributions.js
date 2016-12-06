@@ -60,12 +60,14 @@ internals.applyRoutes = (server, next) => {
       let pageSize = request.query.pageSize
       let sort = request.query.sort
       let sortOrder = request.query.sortOrder
+      let related = ['tweet']
 
       let contributions = ContributionService.fetch(filter, {
         sortBy: sort,
         sortOrder: sortOrder,
         page: page,
-        pageSize: pageSize
+        pageSize: pageSize,
+        withRelated: related
       })
 
       reply(contributions)
