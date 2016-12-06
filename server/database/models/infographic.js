@@ -9,6 +9,7 @@ module.exports = (BaseModel, bookshelf) => BaseModel.extend({
   schema: {
     id: Joi.number().integer(),
     name: Joi.string().required(),
+    url: Joi.string().uri().required(),
     file_size: Joi.number().integer(),
     file_type: Joi.string().allow(null)
   }
