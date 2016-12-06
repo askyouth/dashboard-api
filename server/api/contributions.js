@@ -105,7 +105,7 @@ internals.applyRoutes = (server, next) => {
       description: 'Update contribution',
       validate: {
         payload: {
-          topicId: Joi.number().integer()
+          topic_id: Joi.number().integer().allow(null)
         }
       },
       pre: [{
