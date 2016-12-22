@@ -41,6 +41,9 @@ internals.applyRoutes = (server, next) => {
     path: '/tweets',
     config: {
       description: 'Get tweets',
+      auth: {
+        mode: 'optional'
+      },
       validate: {
         query: {
           maxId: Joi.string(),
