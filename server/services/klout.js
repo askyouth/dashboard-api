@@ -4,7 +4,7 @@
 const Joi = require('joi')
 const Klout = require('node_klout')
 const Promise = require('bluebird')
-const TaskRunner = require('@uxp/task-runner')
+const perioda = require('perioda')
 
 Promise.promisifyAll(Klout.prototype)
 
@@ -20,7 +20,7 @@ internals.init = function (server, options, next) {
   const log = server.log.bind(server, ['services', 'klout'])
 
   const klout = new Klout(options.auth)
-  const task = new TaskRunner(check, options.interval)
+  const task = perioda(check, options.interval)
   task.on('error', (err) => log(`error: ${err.message}`))
   options.interval && task.start()
 
@@ -61,6 +61,7 @@ internals.init = function (server, options, next) {
   }
 
   server.expose('getIdentity', getIdentity)
+
   next()
 }
 
@@ -71,7 +72,7 @@ exports.register = function (server, options, next) {
   })
 
   try {
-    Joi.assert(options, schema, 'Invalid Klout configuration')
+    options = Joi.attempt(options, schema, 'Invalid Klout configuration')
   } catch (err) {
     return next(err)
   }
@@ -79,6 +80,7 @@ exports.register = function (server, options, next) {
   server.dependency(internals.dependencies, (server, next) => {
     internals.init(server, options, next)
   })
+
   next()
 }
 

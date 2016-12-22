@@ -22,7 +22,6 @@
   "author": "UX Passion (http://uxpassion.com)",
   "license": "ISC",
   "dependencies": {
-    "@uxp/task-runner": "^1.1.1",
     "bcrypt": "^0.8.7",
     "bluebird": "^3.4.6",
     "bookshelf": "^0.10.1",
@@ -49,6 +48,7 @@
     "node_klout": "^0.3.1",
     "nodemailer": "^2.6.4",
     "nodemailer-markdown": "^1.0.1",
+    "perioda": "^1.0.1",
     "pg": "^6.1.0",
     "tv": "^5.0.2",
     "twitter": "^1.4.0",
