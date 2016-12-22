@@ -26,7 +26,6 @@ internals.init = (server, next) => {
       .fetch({ require: true })
       .catch(Handle.NotFoundError, () => {
         return Twitter.verifyCredentials()
-          .tap(header => console.log(header))
           .then((profile) => [profile, Klout.getIdentity(profile.screen_name).catch((err) => {
             if (err.message.match(/not found/i)) return {}
             throw err
