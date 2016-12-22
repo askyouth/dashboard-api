@@ -177,6 +177,7 @@ internals.applyRoutes = (server, next) => {
     method: 'GET',
     path: '/{param*}',
     config: {
+      description: 'Serve static content',
       auth: false
     },
     handler: {

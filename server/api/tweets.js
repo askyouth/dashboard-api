@@ -87,6 +87,7 @@ internals.applyRoutes = (server, next) => {
     method: 'POST',
     path: '/tweets',
     config: {
+      description: 'Create new tweet',
       payload: {
         output: 'file',
         parse: true,
