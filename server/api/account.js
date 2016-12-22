@@ -48,7 +48,6 @@ internals.applyRoutes = (server, next) => {
     path: '/profile',
     config: {
       description: 'Update account',
-      auth: 'jwt',
       validate: {
         payload: Joi.object({
           name: Joi.string(),

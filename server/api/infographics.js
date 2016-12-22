@@ -176,6 +176,9 @@ internals.applyRoutes = (server, next) => {
   server.route({
     method: 'GET',
     path: '/{param*}',
+    config: {
+      auth: false
+    },
     handler: {
       directory: {
         path: 'public'

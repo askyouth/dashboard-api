@@ -17,7 +17,6 @@ internals.dependencies = ['database']
 
 internals.applyStrategy = (server, options, next) => {
   const Database = server.plugins.database
-  const User = Database.model('User')
   const Session = Database.model('Session')
 
   server.auth.strategy('jwt', 'jwt', {
@@ -27,6 +26,7 @@ internals.applyStrategy = (server, options, next) => {
       algorithms: ['HS256']
     }
   })
+  server.auth.default('jwt')
 
   function validate (token, request, cb) {
     Session.forge({ id: token.sid })

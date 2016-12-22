@@ -24,6 +24,7 @@ internals.applyRoutes = (server, next) => {
     path: '/signup',
     config: {
       description: 'Create user account',
+      auth: false,
       validate: {
         payload: {
           name: Joi.string(),
@@ -105,6 +106,7 @@ internals.applyRoutes = (server, next) => {
     path: '/login',
     config: {
       description: 'Log in',
+      auth: false,
       validate: {
         payload: {
           email: Joi.string().email().required(),
@@ -194,6 +196,7 @@ internals.applyRoutes = (server, next) => {
     path: '/login/forgot',
     config: {
       description: 'Generate new password reset hash',
+      auth: false,
       validate: {
         payload: {
           email: Joi.string().email().required()
@@ -246,6 +249,7 @@ internals.applyRoutes = (server, next) => {
     path: '/login/reset',
     config: {
       description: 'Reset user password',
+      auth: false,
       validate: {
         payload: {
           user: Joi.number().integer().required(),
