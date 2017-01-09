@@ -10,7 +10,8 @@ exports.seed = (knex, Promise) => Promise.all([
 ]).then(() => Promise.all([
   knex('camp').insert([
     camp(1, 'Policy maker'),
-    camp(2, 'Youth')
+    camp(2, 'Youth'),
+    camp(3, 'Broker')
   ]),
   knex('topic').insert([
     topic('Sexual orientation & gender rights'),
