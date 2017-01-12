@@ -2,18 +2,17 @@
 
 // Module dependencies.
 const Joi = require('joi')
-const Path = require('path')
 const Uuid = require('node-uuid')
 const Config = require('config')
 const Promise = require('bluebird')
-const BlobStore = require('fs-blob-store')
-const StreamLength = require('./stream-length')
-
-Promise.promisifyAll(BlobStore.prototype)
 
 exports.register = function (server, options, next) {
   const schema = {
-    directory: Joi.string().required()
+    store: Joi.string().required().allow(['directory', 's3']),
+    directory: Joi.string(),
+    access_key: Joi.string(),
+    secret_key: Joi.string(),
+    bucket: Joi.string()
   }
 
   try {
@@ -22,15 +21,12 @@ exports.register = function (server, options, next) {
     return next(err)
   }
 
-  const blobs = new BlobStore(options.directory)
-  const baseUrl = Config.get('connection.api.uri')
-
-  function path (key) {
-    return Path.join(options.directory, key)
-  }
-
-  function url (key) {
-    return `${baseUrl}/uploads/${key}`
+  let blobs
+  if (options.store === 's3') {
+    blobs = new (require('./s3-file-store'))(options)
+  } else if (options.store === 'directory') {
+    options.baseUrl = `${Config.get('connection.api.uri')}/uploads`
+    blobs = new (require('./local-file-store'))(options)
   }
 
   function fetch (key) {
@@ -41,26 +37,17 @@ exports.register = function (server, options, next) {
     return Promise.fromCallback((cb) => {
       let key = Uuid.v1()
       options.name && (key = `${key}-${options.name}`)
-      let ls = new StreamLength()
-      let ws = blobs.createWriteStream(key, (err) => {
-        if (err) return cb(err)
-        cb(null, {
-          key: key,
-          url: url(key),
-          filename: path(key),
-          size: ls.length
-        })
-      })
-      rs.pipe(ls).pipe(ws)
+      let ws = blobs.createWriteStream(key, cb)
+      rs.pipe(ws)
     })
   }
 
   function remove (options) {
-    return blobs.removeAsync(options)
+    return Promise.fromCallback((cb) => {
+      blobs.remove(options, cb)
+    })
   }
 
-  server.expose('url', url)
-  server.expose('path', path)
   server.expose('fetch', fetch)
   server.expose('create', create)
   server.expose('remove', remove)

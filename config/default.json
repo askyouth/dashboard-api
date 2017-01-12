@@ -59,5 +59,12 @@
   "klout": {
     "auth":     "neng5ns49v7c6fm9cf85ykc8",
     "interval": 60000
+  },
+  "files": {
+    "store": "directory",
+    "directory": "public/uploads",
+    "access_key": "",
+    "secret_key": "",
+    "bucket": ""
   }
 }

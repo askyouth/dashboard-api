@@ -139,9 +139,7 @@ const manifest = {
   }, {
     plugin: {
       register: './server/services/file',
-      options: {
-        directory: process.cwd() + '/public/uploads'
-      }
+      options: Config.getp('files')
     }
   }]
 }

@@ -39,5 +39,11 @@
   "klout": {
     "auth":     "KLOUT_AUTH",
     "interval": "KLOUT_INTERVAL"
+  },
+  "files": {
+    "store": "FILES_STORE",
+    "access_key": "FILES_S3_ACCESS_KEY",
+    "secret_key": "FILES_S3_SECRET_KEY",
+    "bucket": "FILES_S3_BUCKET"
   }
 }

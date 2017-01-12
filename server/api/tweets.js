@@ -129,8 +129,7 @@ internals.applyRoutes = (server, next) => {
           let media = Infographic.forge({ id: infographicId })
             .fetch({ require: true })
             .then((infographic) => {
-              let path = File.path(infographic.get('name'))
-              let stream = Fs.createReadStream(path)
+              let stream = File.fetch(infographic.get('name'))
               return Twitter.upload(stream, {
                 mediaSize: infographic.get('file_size')
               })
