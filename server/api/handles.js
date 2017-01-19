@@ -139,7 +139,7 @@ internals.applyRoutes = (server, next) => {
       description: 'Get handle',
       validate: {
         params: {
-          handleId: Joi.number().integer().required()
+          handleId: Joi.string().required()
         },
         query: {
           related: Joi.array().items(Joi.string().valid(['topics'])).default([])
@@ -166,7 +166,7 @@ internals.applyRoutes = (server, next) => {
       description: 'Update handle',
       validate: {
         params: {
-          handleId: Joi.number().integer().required()
+          handleId: Joi.string().required()
         },
         payload: {
           name: Joi.string(),
@@ -197,7 +197,7 @@ internals.applyRoutes = (server, next) => {
       description: 'Delete handle',
       validate: {
         params: {
-          handleId: Joi.number().integer().required()
+          handleId: Joi.string().required()
         }
       },
       pre: [{
@@ -223,7 +223,7 @@ internals.applyRoutes = (server, next) => {
       description: 'Get topics related to handle',
       validate: {
         params: {
-          handleId: Joi.number().integer().required()
+          handleId: Joi.string().required()
         }
       },
       pre: [{
@@ -245,7 +245,7 @@ internals.applyRoutes = (server, next) => {
       description: 'Attach topic to handle',
       validate: {
         params: {
-          handleId: Joi.number().integer().required(),
+          handleId: Joi.string().required(),
           topicId: Joi.number().integer().required()
         }
       },
@@ -271,7 +271,7 @@ internals.applyRoutes = (server, next) => {
       description: 'Detach topic from handle',
       validate: {
         params: {
-          handleId: Joi.number().integer().required(),
+          handleId: Joi.string().required(),
           topicId: Joi.number().integer().required()
         }
       },
