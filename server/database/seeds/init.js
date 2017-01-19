@@ -16,9 +16,13 @@ exports.seed = (knex, Promise) => Promise.all([
   knex('topic').insert([
     topic('Sexual orientation & gender rights'),
     topic('Economic crisis / Economy'),
-    topic('Terrorism'),
     topic('NEETs'),
     topic('Immigration'),
-    topic('Environment')
+    topic('Environment'),
+    topic('Terrorism'),
+    topic('Education & Employment'),
+    topic('EU (dis)integration'),
+    topic('Democracy & human rights'),
+    topic('Health')
   ])
 ]))
