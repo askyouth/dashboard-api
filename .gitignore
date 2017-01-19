@@ -58,3 +58,5 @@ jspm_packages
 
 # Tern
 .tern-project
+
+public/uploads
