@@ -3,6 +3,7 @@
 // Module dependencies.
 const S3 = require('aws-sdk/clients/s3')
 const S3BlobStore = require('s3-blob-store')
+const BaseFileStore = require('./base-file-store')
 const StreamLength = require('./stream-length')
 
 class S3BlobStoreFix extends S3BlobStore {
@@ -13,8 +14,9 @@ class S3BlobStoreFix extends S3BlobStore {
   }
 }
 
-class S3FileStore {
+class S3FileStore extends BaseFileStore {
   constructor (opts) {
+    super(opts)
     this.bucket = opts.bucket
     this.client = opts.client || new S3({
       accessKeyId: opts.access_key,
@@ -36,6 +38,7 @@ class S3FileStore {
       s3opts = {}
     }
     if (typeof opts === 'string') opts = { key: opts }
+    if (!opts.key) opts.key = this.generateKey(opts)
     opts = Object.assign({ ACL: 'public-read' }, opts)
     let proxy = new StreamLength()
     let ws = this.store.createWriteStream(opts, s3opts, (err, info) => {

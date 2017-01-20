@@ -61,10 +61,7 @@
     "interval": 60000
   },
   "files": {
-    "store": "directory",
-    "directory": "public/uploads",
-    "access_key": "",
-    "secret_key": "",
-    "bucket": ""
+    "strategy": "local",
+    "directory": "public/uploads"
   }
 }

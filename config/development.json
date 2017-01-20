@@ -24,5 +24,9 @@
       "access_token":        "1746146112-XDUa4XptyvB9ShsyjDj7sSlBgQymPrH5x6PkZ0B",
       "access_token_secret": "GWWr0asmbxRRmwWfR3YZQGj5YeSUhXmgdKfLpaWHtm85F"
     }
+  },
+  "files": {
+    "strategy": "local",
+    "base_url": "http://files.ask-dashboard.local"
   }
 }

@@ -44,6 +44,7 @@
     "knex": "^0.12.1",
     "lodash": "^4.15.0",
     "lout": "^9.1.0",
+    "mime-types": "^2.1.14",
     "node-tweet-stream": "^2.0.1",
     "node-uuid": "^1.4.7",
     "node_klout": "^0.3.1",

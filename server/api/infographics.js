@@ -94,8 +94,12 @@ internals.applyRoutes = (server, next) => {
     },
     handler (request, reply) {
       let file = request.payload.file
+      let options = {
+        name: file.hapi.filename,
+        type: file.hapi.headers['content-type']
+      }
 
-      let infographic = File.create(file, { name: file.hapi.filename })
+      let infographic = File.create(file, options)
         .then((file) => Infographic.forge({
           url: file.url,
           name: file.key,

@@ -41,7 +41,9 @@
     "interval": "KLOUT_INTERVAL"
   },
   "files": {
-    "store": "FILES_STORE",
+    "strategy": "FILES_STRATEGY",
+    "directory": "FILES_DIRECTORY",
+    "base_url": "FILES_BASE_URL",
     "access_key": "FILES_S3_ACCESS_KEY",
     "secret_key": "FILES_S3_SECRET_KEY",
     "bucket": "FILES_S3_BUCKET"

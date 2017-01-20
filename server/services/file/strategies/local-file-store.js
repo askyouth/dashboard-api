@@ -1,13 +1,16 @@
 'use strict'
 
 // Module dependencies.
+const Path = require('path')
 const FsBlobStore = require('fs-blob-store')
+const BaseFileStore = require('./base-file-store')
 const StreamLength = require('./stream-length')
 
-class LocalFileStore {
+class LocalFileStore extends BaseFileStore {
   constructor (opts) {
-    this.store = new FsBlobStore(opts.directory)
-    this.baseUrl = opts.baseUrl
+    super(opts)
+    this.store = new FsBlobStore(Path.resolve(opts.directory))
+    this.baseUrl = opts.base_url
   }
 
   url (key) {
@@ -16,6 +19,7 @@ class LocalFileStore {
 
   createWriteStream (opts, cb) {
     if (typeof opts === 'string') opts = { key: opts }
+    if (!opts.key) opts.key = this.generateKey(opts)
     let proxy = new StreamLength()
     let ws = this.store.createWriteStream(opts, (err, info) => {
       if (err) return cb(err)

@@ -2,17 +2,16 @@
 
 // Module dependencies.
 const Joi = require('joi')
-const Uuid = require('node-uuid')
-const Config = require('config')
 const Promise = require('bluebird')
 
 exports.register = function (server, options, next) {
   const schema = {
-    store: Joi.string().required().allow(['directory', 's3']),
-    directory: Joi.string(),
-    access_key: Joi.string(),
-    secret_key: Joi.string(),
-    bucket: Joi.string()
+    strategy: Joi.string().required().allow(['local', 's3']),
+    directory: Joi.string().when('strategy', { is: 'local', then: Joi.required() }),
+    base_url: Joi.string().when('strategy', { is: 'local', then: Joi.required() }),
+    access_key: Joi.string().when('strategy', { is: 's3', then: Joi.required() }),
+    secret_key: Joi.string().when('strategy', { is: 's3', then: Joi.required() }),
+    bucket: Joi.string().when('strategy', { is: 's3', then: Joi.required() })
   }
 
   try {
@@ -21,30 +20,22 @@ exports.register = function (server, options, next) {
     return next(err)
   }
 
-  let blobs
-  if (options.store === 's3') {
-    blobs = new (require('./s3-file-store'))(options)
-  } else if (options.store === 'directory') {
-    options.baseUrl = `${Config.get('connection.api.uri')}/uploads`
-    blobs = new (require('./local-file-store'))(options)
-  }
+  const strategy = options.strategy
+  const store = new (require(`./strategies/${strategy}-file-store`))(options)
 
   function fetch (key) {
-    return blobs.createReadStream(key)
+    return store.createReadStream(key)
   }
 
-  function create (rs, options) {
+  function create (rs, opts) {
     return Promise.fromCallback((cb) => {
-      let key = Uuid.v1()
-      options.name && (key = `${key}-${options.name}`)
-      let ws = blobs.createWriteStream(key, cb)
-      rs.pipe(ws)
+      rs.pipe(store.createWriteStream(opts, cb))
     })
   }
 
-  function remove (options) {
+  function remove (opts) {
     return Promise.fromCallback((cb) => {
-      blobs.remove(options, cb)
+      store.remove(opts, cb)
     })
   }
 
