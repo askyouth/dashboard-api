@@ -173,7 +173,7 @@ internals.applyRoutes = (server, next) => {
     },
     handler (request, reply) {
       let tweet = request.pre.tweet
-      tweet = tweet.load(['parent', 'replies'])
+      tweet = tweet.load(['handle', 'parent', 'replies'])
 
       reply(tweet)
     }
