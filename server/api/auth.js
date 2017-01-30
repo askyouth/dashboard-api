@@ -40,7 +40,7 @@ internals.applyRoutes = (server, next) => {
 
           let user = User.forge({ email: email })
             .fetch({ require: true })
-            .then((user) => Boom.conflict('Username already in use.'))
+            .then((user) => Boom.conflict('Email already in use.'))
             .catch(User.NotFoundError, () => {})
 
           reply(user)

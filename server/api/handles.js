@@ -30,7 +30,7 @@ internals.applyRoutes = (server, next) => {
     let handle = Handle.forge({ id: handleId })
       .fetch({ require: true })
       .catch(Handle.NotFoundError, () => {
-        throw NotFoundError('Topic not found')
+        throw NotFoundError('Handle not found')
       })
 
     reply(handle)
