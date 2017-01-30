@@ -8,6 +8,7 @@ internals.dependencies = ['database']
 
 internals.applyRoutes = (server, next) => {
   const Database = server.plugins.database
+  const Camp = Database.model('Camp')
   const knex = Database.knex
 
   server.route({
@@ -31,6 +32,7 @@ internals.applyRoutes = (server, next) => {
         ])
         .join('handle', 'klout_score.handle_id', 'handle.id')
         .join('camp', 'handle.camp_id', 'camp.id')
+        .whereNot('handle.camp_id', Camp.BROKER)
         .whereBetween('klout_score.created_at', [
           knex.raw('(now() - \'7 day\'::interval)::timestamp'),
           knex.raw('now()')
