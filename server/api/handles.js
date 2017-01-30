@@ -75,15 +75,18 @@ internals.applyRoutes = (server, next) => {
       let sortOrder = request.query.sortOrder
       let related = ['camp'].concat(request.query.related)
 
-      let handles = HandleService.fetch(filter, {
-        sortBy: sort,
-        sortOrder: sortOrder,
-        page: page,
-        pageSize: pageSize,
-        withRelated: related
+      let result = Promise.props({
+        handles: HandleService.fetch(filter, {
+          sortBy: sort,
+          sortOrder: sortOrder,
+          page: page,
+          pageSize: pageSize,
+          withRelated: related
+        }),
+        count: HandleService.count(filter)
       })
 
-      reply(handles)
+      reply(result)
     }
   })
 
