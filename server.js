@@ -9,6 +9,6 @@ Composer((err, server) => {
   }
 
   server.start(() => {
-    console.log('Streamer started on port %s in %s mode', server.info.port, process.env.NODE_ENV)
+    console.log('Dashboard started on port %s in %s mode', server.info.port, process.env.NODE_ENV)
   })
 })

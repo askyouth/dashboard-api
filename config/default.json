@@ -1,0 +1,67 @@
+{
+  "connection": {
+    "api": {
+      "port": 4000,
+      "uri": "http://api.dashboard.ask-project.eu"
+    },
+    "front": {
+      "uri": "http://dashboard.ask-project.eu"
+    }
+  },
+  "auth": {
+    "secret": ""
+  },
+  "database": {
+    "knex": {
+      "client": "pg",
+      "connection": {
+        "host":     "localhost",
+        "user":     "postgres",
+        "password": "postgres",
+        "database": "ask_dashboard",
+        "port":     5432,
+        "charset":  "utf8"
+      },
+      "pool": {
+        "min": 2,
+        "max": 10
+      },
+      "migrations": {
+        "tableName": "migrations",
+        "directory": "./server/database/migrations"
+      },
+      "seeds": {
+        "directory": "./server/database/seeds"
+      }
+    }
+  },
+  "mail": {
+    "transport": {
+      "host": "smtp.gmail.com",
+      "port": 465,
+      "secure": true,
+      "auth": {
+        "user": "",
+        "pass": ""
+      }
+    },
+    "fromAddress": "dashboard@ask-project.eu",
+    "templateDir": "./server/services/mail/templates"
+  },
+  "twitter": {
+    "auth": {
+      "consumer_key":        "DqSzurHjdaqo8xaQwV5Z2jt96",
+      "consumer_secret":     "h1xj64OBU17yHmw8HRSn9slhs7auMJaogIBrYJ5ap3rGLqYP28",
+      "access_token":        "1746146112-Rkib4RtH6rqwNin1wbI7wGPzk040WON1EP4cpTn",
+      "access_token_secret": "emeJ0OOjZNyxd9wfpQBgFg4fGdm9TGsW2IXFHCcJ5UASm"
+    }
+  },
+  "klout": {
+    "auth":     "neng5ns49v7c6fm9cf85ykc8",
+    "interval": 60000
+  },
+  "files": {
+    "strategy": "local",
+    "directory": "public/uploads"
+  }
+}
