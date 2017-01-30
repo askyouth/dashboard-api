@@ -1,10 +1,10 @@
 {
   "connection": {
     "api": {
-      "uri": "http://ask-dashboard.local"
+      "uri": "http://api.ask-dashboard.local"
     },
     "front": {
-      "uri": "http://ask.local"
+      "uri": "http://ask-dashboard.local"
     }
   },
   "auth": {
