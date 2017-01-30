@@ -97,7 +97,22 @@ internals.applyRoutes = (server, next) => {
           username: Joi.string().required(),
           camp_id: Joi.number().integer()
         }
-      }
+      },
+      pre: [{
+        assign: 'handle',
+        method (request, reply) {
+          let username = request.payload.username
+
+          let handle = Handle.forge({ username })
+            .fetch({ require: true })
+            .then((handle) => {
+              throw new BadRequestError('Handle already exist')
+            })
+            .catch(Handle.NotFoundError, () => {})
+
+          reply(handle)
+        }
+      }]
     },
     handler (request, reply) {
       let username = request.payload.username
