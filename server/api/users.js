@@ -4,6 +4,7 @@
 const Joi = require('joi')
 const Boom = require('boom')
 const Config = require('config')
+const Promise = require('bluebird')
 
 const NotFoundError = Boom.notFound
 const BadRequestError = Boom.badRequest
@@ -59,14 +60,17 @@ internals.applyRoutes = (server, next) => {
       let sort = request.query.sort
       let sortOrder = request.query.sortOrder
 
-      let users = UserService.fetch(filter, {
-        sortBy: sort,
-        sortOrder: sortOrder,
-        page: page,
-        pageSize: pageSize
+      let result = Promise.props({
+        users: UserService.fetch(filter, {
+          sortBy: sort,
+          sortOrder: sortOrder,
+          page: page,
+          pageSize: pageSize
+        }),
+        count: UserService.count(filter)
       })
 
-      reply(users)
+      reply(result)
     }
   })
 
