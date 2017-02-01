@@ -18,6 +18,20 @@ internals.applyRoutes = (server, next) => {
 
   server.route({
     method: 'GET',
+    path: '/config',
+    config: {
+      description: 'Get public settings',
+      auth: false
+    },
+    handler (request, reply) {
+      let keys = ['signup.enabled']
+      let config = Settings.get(keys)
+      reply(config)
+    }
+  })
+
+  server.route({
+    method: 'GET',
     path: '/settings',
     config: {
       description: 'Fetch settings'
