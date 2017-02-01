@@ -11,10 +11,16 @@ const PasswordRecoveryError = Errors.PasswordRecoveryError
 
 const internals = {}
 
-internals.dependencies = ['database', 'auth', 'services/mail']
+internals.dependencies = [
+  'auth',
+  'database',
+  'settings',
+  'services/mail'
+]
 
 internals.applyRoutes = (server, next) => {
   const Auth = server.plugins.auth
+  const Settings = server.plugins.settings
   const Database = server.plugins.database
   const User = Database.model('User')
   const Mail = server.plugins['services/mail']
@@ -34,6 +40,16 @@ internals.applyRoutes = (server, next) => {
         }
       },
       pre: [{
+        assign: 'signupEnabled',
+        method (request, reply) {
+          let promise = Settings.getValue('signup.enabled').then((enabled) => {
+            if (!enabled) {
+              return Boom.forbidden('Signup is disabled.')
+            }
+          })
+          reply(promise)
+        }
+      }, {
         assign: 'emailCheck',
         method (request, reply) {
           let email = request.payload.email

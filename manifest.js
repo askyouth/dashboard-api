@@ -91,6 +91,8 @@ const manifest = {
       }
     }
   }, {
+    plugin: './server/settings'
+  }, {
     plugin: './server/api/auth'
   }, {
     plugin: './server/api/account'
@@ -110,6 +112,8 @@ const manifest = {
     plugin: './server/api/analytics'
   }, {
     plugin: './server/api/search'
+  }, {
+    plugin: './server/api/settings'
   }, {
     plugin: './server/services/user'
   }, {
