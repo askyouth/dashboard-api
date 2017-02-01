@@ -28,6 +28,8 @@ exports.seed = (knex, Promise) => Promise.all([
     topic('Health')
   ]),
   knex('settings').insert([
-    setting('signup.enabled', 'boolean', 'true')
+    setting('signup.enabled', 'boolean', 'true'),
+    setting('twitter.list.youth', 'string', ''),
+    setting('twitter.list.policymakers', 'string', '')
   ])
 ]))

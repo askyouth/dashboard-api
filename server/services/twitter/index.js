@@ -2,7 +2,7 @@
 
 // Module dependencies.
 const Joi = require('joi')
-const Twitter = require('twitter')
+const Twitter = require('./client')
 const TwitterStream = require('node-tweet-stream')
 const TwitterUploadStream = require('./upload-stream')
 const Promise = require('bluebird')
@@ -136,12 +136,51 @@ internals.init = function (server, options, next) {
     })
   }
 
+  function listOwnerships () {
+    return getUsingCursor('lists/ownerships', {}, 'lists')
+  }
+
+  function listMembers (opts) {
+    opts = Object.assign({
+      count: 50
+    }, opts)
+    return getUsingCursor('lists/members', opts, 'users')
+  }
+
+  function listAddMember (id, userId) {
+    return twitter.postAsync('lists/members/create', {
+      list_id: id,
+      user_id: userId
+    })
+  }
+
+  function listRemoveMember (id, userId) {
+    return twitter.postAsync('lists/members/destroy', {
+      list_id: id,
+      user_id: userId
+    }).catch((err) => {
+      console.log(err)
+      throw err
+    })
+  }
+
   function friendshipCreate (id) {
     return twitter.postAsync('friendships/create', { user_id: id })
   }
 
   function friendshipDestroy (id) {
     return twitter.postAsync('friendships/destroy', { user_id: id })
+  }
+
+  function getUsingCursor (path, params, prop) {
+    let data = []
+    let done = function (result) {
+      Array.prototype.push.apply(data, result[prop])
+      if (result.next_cursor_str === '0') return data
+      params.cursor = result.next_cursor_str
+      return twitter.getAsync(path, params).then(done)
+    }
+    return twitter.getAsync(path, params).then(done)
   }
 
   server.expose('track', track)
@@ -155,8 +194,14 @@ internals.init = function (server, options, next) {
   server.expose('statusFavorite', statusFavorite)
   server.expose('statusUnfavorite', statusUnfavorite)
   server.expose('upload', upload)
+  server.expose('listOwnerships', listOwnerships)
+  server.expose('listMembers', listMembers)
+  server.expose('listAddMember', listAddMember)
+  server.expose('listRemoveMember', listRemoveMember)
   server.expose('friendshipCreate', friendshipCreate)
   server.expose('friendshipDestroy', friendshipDestroy)
+
+  server.expose('TwitterError', Twitter.TwitterError)
 
   Promise.join(
     Topic.collection().fetch(),

@@ -1,16 +1,20 @@
 'use strict'
 
 // Module dependencies.
+const cache = require('arr-cache')
 const Promise = require('bluebird')
 
 const internals = {}
 
 internals.dependencies = [
-  'settings'
+  'settings',
+  'services/twitter'
 ]
 
 internals.applyRoutes = (server, next) => {
   const Settings = server.plugins.settings
+  const TwitterService = server.plugins['services/twitter']
+  const c = cache({ keeptime: '60s' })
 
   server.route({
     method: 'GET',
@@ -20,7 +24,27 @@ internals.applyRoutes = (server, next) => {
     },
     handler (request, reply) {
       let settings = Promise.props({
-        settings: Settings.get()
+        settings: Settings.get(),
+        lists: Promise.resolve(c.fetch('lists'))
+          .then((lists) => {
+            if (lists) return lists
+            return TwitterService.listOwnerships().then((lists) => {
+              lists = lists.map((list) => ({
+                id: list.id_str,
+                name: list.name,
+                full_name: list.full_name,
+                description: list.description,
+                slug: list.slug,
+                mode: list.mode,
+                uri: list.uri,
+                member_count: list.member_count,
+                subscriber_count: list.subscriber_count,
+                created_at: list.created_at
+              }))
+              c.add('lists', lists)
+              return lists
+            })
+          })
       })
 
       reply(settings)

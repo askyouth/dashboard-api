@@ -128,6 +128,7 @@ internals.applyRoutes = (server, next) => {
       let handle = TwitterService.getUserProfile(opts)
         .then((profile) => HandleService.createFromTwitterProfile(profile, campId))
         .then((handle) => handle.refresh({ withRelated: ['camp'] }))
+        .tap((handle) => HandleService.addToTwitterList(handle))
         .tap((handle) => TwitterService.follow(handle.get('id')))
         .tap((handle) => {
           if (follow) return TwitterService.friendshipCreate(handle.get('id'))
@@ -213,7 +214,8 @@ internals.applyRoutes = (server, next) => {
       let handle = request.pre.handle
 
       let handleId = handle.get('id')
-      let promise = handle.destroy()
+      let promise = HandleService.removeFromTwitterList(handle)
+        .then(() => handle.destroy())
         .tap(() => TwitterService.unfollow(handleId))
         .tap(() => TwitterService.friendshipDestroy(handleId))
 
