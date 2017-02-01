@@ -25,7 +25,10 @@ internals.init = function (server, options, next) {
   options.interval && task.start()
 
   function getIdentity (username) {
-    return klout.getKloutIdentityAsync(username)
+    return klout.getKloutIdentityAsync(username).catch((err) => {
+      if (err.message.match(/not found/i)) return {}
+      throw err
+    })
   }
 
   function getUserScore (kloutId) {

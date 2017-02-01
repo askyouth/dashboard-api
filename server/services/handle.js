@@ -26,27 +26,10 @@ internals.init = (server, next) => {
       .fetch({ require: true })
       .catch(Handle.NotFoundError, () => {
         return Twitter.verifyCredentials()
-          .then((profile) => [profile, Klout.getIdentity(profile.screen_name).catch((err) => {
-            if (err.message.match(/not found/i)) return {}
-            throw err
-          })])
-          .spread((profile, klout) => {
-            return Handle.forge({
-              id: profile.id_str,
-              username: profile.screen_name,
-              name: profile.name,
-              profile: {
-                image: profile.profile_image_url_https,
-                description: profile.description
-              },
-              camp_id: Camp.BROKER,
-              klout_id: klout.id
-            }).save(null, { method: 'insert' })
-          }).tap((handle) => {
-            Twitter.follow(handle.get('id'))
-          })
+          .then((profile) => createFromTwitterProfile(profile, Camp.BROKER))
+          .tap((handle) => Twitter.follow(handle.get('id')))
       })
-      .catch((err) => log(`error: ${err.message}`))
+      .catch((err) => log(`error fetching broker: ${err.message}`))
   }
 
   function prepareQuery (query) {
@@ -93,8 +76,31 @@ internals.init = (server, next) => {
       .then((count) => +count)
   }
 
+  function create (data) {
+    return Klout.getIdentity(data.username)
+      .then((klout) => {
+        data = Object.assign({ klout_id: klout.id }, data)
+        return Handle.forge(data).save(null, { method: 'insert' })
+      })
+  }
+
+  function createFromTwitterProfile (profile, campId) {
+    return create({
+      id: profile.id_str,
+      username: profile.screen_name,
+      name: profile.name,
+      profile: {
+        image: profile.profile_image_url_https,
+        description: profile.description
+      },
+      camp_id: campId
+    })
+  }
+
   server.expose('fetch', fetch)
   server.expose('count', count)
+  server.expose('create', create)
+  server.expose('createFromTwitterProfile', createFromTwitterProfile)
 
   next()
 }

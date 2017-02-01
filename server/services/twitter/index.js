@@ -90,13 +90,13 @@ internals.init = function (server, options, next) {
   }
 
   function follow (handles) {
-    log(`tracking ${handles}`)
+    log(`following ${handles}`)
     stream.follow(handles, false)
     reconnect()
   }
 
   function unfollow (handles) {
-    log(`untracking ${handles}`)
+    log(`unfollowing ${handles}`)
     stream.unfollow(handles, false)
     reconnect()
   }
@@ -136,6 +136,14 @@ internals.init = function (server, options, next) {
     })
   }
 
+  function friendshipCreate (id) {
+    return twitter.postAsync('friendships/create', { user_id: id })
+  }
+
+  function friendshipDestroy (id) {
+    return twitter.postAsync('friendships/destroy', { user_id: id })
+  }
+
   server.expose('track', track)
   server.expose('untrack', untrack)
   server.expose('follow', follow)
@@ -147,6 +155,8 @@ internals.init = function (server, options, next) {
   server.expose('statusFavorite', statusFavorite)
   server.expose('statusUnfavorite', statusUnfavorite)
   server.expose('upload', upload)
+  server.expose('friendshipCreate', friendshipCreate)
+  server.expose('friendshipDestroy', friendshipDestroy)
 
   Promise.join(
     Topic.collection().fetch(),

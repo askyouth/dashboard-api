@@ -13,13 +13,11 @@ const internals = {}
 internals.dependencies = [
   'database',
   'services/handle',
-  'services/twitter',
-  'services/klout'
+  'services/twitter'
 ]
 
 internals.applyRoutes = (server, next) => {
-  const Klout = server.plugins['services/klout']
-  const Twitter = server.plugins['services/twitter']
+  const TwitterService = server.plugins['services/twitter']
   const HandleService = server.plugins['services/handle']
   const Database = server.plugins.database
   const Handle = Database.model('Handle')
@@ -98,7 +96,8 @@ internals.applyRoutes = (server, next) => {
       validate: {
         payload: {
           username: Joi.string().required(),
-          camp_id: Joi.number().integer()
+          camp_id: Joi.number().integer(),
+          follow: Joi.boolean().default(true)
         }
       },
       pre: [{
@@ -120,31 +119,19 @@ internals.applyRoutes = (server, next) => {
     handler (request, reply) {
       let username = request.payload.username
       let campId = request.payload.camp_id
+      let follow = request.payload.follow
 
-      let handle = Promise.join(
-        Twitter.getUserProfile({
-          screen_name: username,
-          include_entities: false
-        }),
-        Klout.getIdentity(username).catch((err) => {
-          if (err.message.match(/not found/i)) return {}
-          throw err
+      let opts = {
+        screen_name: username,
+        include_entities: false
+      }
+      let handle = TwitterService.getUserProfile(opts)
+        .then((profile) => HandleService.createFromTwitterProfile(profile, campId))
+        .then((handle) => handle.refresh({ withRelated: ['camp'] }))
+        .tap((handle) => TwitterService.follow(handle.get('id')))
+        .tap((handle) => {
+          if (follow) return TwitterService.friendshipCreate(handle.get('id'))
         })
-      ).spread((twitterProfile, kloutIdentity) => {
-        return Handle.forge({
-          id: twitterProfile.id_str,
-          username: twitterProfile.screen_name,
-          name: twitterProfile.name,
-          profile: {
-            image: twitterProfile.profile_image_url_https,
-            description: twitterProfile.description
-          },
-          camp_id: campId,
-          klout_id: kloutIdentity.id
-        }).save(null, { method: 'insert' })
-      }).tap((handle) => {
-        Twitter.follow(handle.get('id'))
-      }).then((handle) => handle.refresh({ withRelated: ['camp'] }))
 
       reply(handle)
     }
@@ -226,11 +213,45 @@ internals.applyRoutes = (server, next) => {
       let handle = request.pre.handle
 
       let handleId = handle.get('id')
-      let promise = handle.destroy().then(() => {
-        Twitter.unfollow(handleId)
-      })
+      let promise = handle.destroy()
+        .tap(() => TwitterService.unfollow(handleId))
+        .tap(() => TwitterService.friendshipDestroy(handleId))
 
       reply(promise).code(204)
+    }
+  })
+
+  server.route({
+    method: 'POST',
+    path: '/handles/{handleId}/follow',
+    config: {
+      description: 'Follow user on Twitter',
+      pre: [{
+        method: loadHandle, assign: 'handle'
+      }]
+    },
+    handler (request, reply) {
+      let handle = request.pre.handle
+      let promise = TwitterService.friendshipCreate(handle.get('id')).return(handle)
+
+      reply(promise)
+    }
+  })
+
+  server.route({
+    method: 'POST',
+    path: '/handles/{handleId}/unfollow',
+    config: {
+      description: 'Unfollow user on Twitter',
+      pre: [{
+        method: loadHandle, assign: 'handle'
+      }]
+    },
+    handler (request, reply) {
+      let handle = request.pre.handle
+      let promise = TwitterService.friendshipDestroy(handle.get('id')).return(handle)
+
+      reply(promise)
     }
   })
 
