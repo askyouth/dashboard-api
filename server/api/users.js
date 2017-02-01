@@ -133,20 +133,21 @@ internals.applyRoutes = (server, next) => {
       let tokenHash = request.pre.tokenHash
       let credentials = request.auth.credentials
 
-      let promise = user.save({ password_reset: tokenHash.hash }).then((user) => {
-        let template = 'set-password'
-        let emailOptions = {
-          subject: 'Set your password',
-          to: user.get('email')
-        }
-        let context = {
-          user: user.toJSON(),
-          credentials: credentials,
-          token: tokenHash.token,
-          url: Config.get('connection.front.uri')
-        }
-        return MailService.sendEmail(emailOptions, template, context)
-      }).return({ message: 'success' })
+      let promise = user.save({ password_reset: tokenHash.hash })
+        .tap((user) => {
+          let template = 'set-password'
+          let emailOptions = {
+            subject: 'Set your password',
+            to: user.get('email')
+          }
+          let context = {
+            user: user.toJSON(),
+            credentials: credentials,
+            token: tokenHash.token,
+            url: Config.get('connection.front.uri')
+          }
+          return MailService.sendEmail(emailOptions, template, context)
+        })
 
       reply(promise)
     }
