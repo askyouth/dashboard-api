@@ -16,7 +16,7 @@ internals.init = (server, next) => {
     opts || (opts = {})
     let queryFn = query.queryFn || _.noop
     let limit = opts.limit || 20
-    let sortBy = opts.sortBy || 'created_at'
+    let sortBy = opts.sortBy || 'id'
     let sortOrder = opts.sortOrder || 'asc'
     let fetchOpts = _.pick(opts, ['withRelated'])
 

@@ -50,7 +50,7 @@ internals.applyRoutes = (server, next) => {
           userId: Joi.string(),
           topicId: Joi.number().integer(),
           limit: Joi.number().integer().default(20),
-          sortBy: Joi.string().default('created_at'),
+          sortBy: Joi.string().default('id'),
           sortOrder: Joi.string().default('desc')
         },
         options: {
