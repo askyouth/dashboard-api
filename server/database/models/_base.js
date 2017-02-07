@@ -9,6 +9,11 @@ const DEFAULT_TIMESTAMP_KEYS = ['created_at', 'updated_at']
 module.exports = (bookshelf) => bookshelf.Model.extend({
   hasTimestamps: true,
 
+  constructor () {
+    this.schema = Object.assign(this.baseSchema(), this.schema)
+    bookshelf.Model.apply(this, arguments)
+  },
+
   /**
    * Initializes the model.
    *
@@ -16,7 +21,6 @@ module.exports = (bookshelf) => bookshelf.Model.extend({
    */
 
   initialize (attrs, options) {
-    this.schema = Object.assign(this.baseSchema(), this.schema)
     this.on('saving', (model, attrs, options) => {
       if (typeof options.validate === 'undefined' || options.validate) {
         return this.validate(model, attrs, options)
