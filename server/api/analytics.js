@@ -1,6 +1,7 @@
 'use strict'
 
 // Module dependencies.
+const Joi = require('joi')
 
 const internals = {}
 
@@ -112,10 +113,19 @@ internals.applyRoutes = (server, next) => {
     method: 'GET',
     path: '/analytics/tweeters',
     config: {
-      description: 'Get most active users'
+      description: 'Get most active users',
+      validate: {
+        query: {
+          days: Joi.number().integer().max(30).default(7),
+          limit: Joi.number().integer().max(200).default(20)
+        }
+      }
     },
     handler (request, reply) {
-      let handles = knex('tweet')
+      let days = request.query.days
+      let limit = request.query.limit
+
+      let handles = knex
         .select([
           'handle.id',
           'handle.username',
@@ -125,16 +135,28 @@ internals.applyRoutes = (server, next) => {
           'camp.name as camp_name',
           'handle.klout_id',
           'handle.klout_score',
-          knex.raw('count(tweet.id) as tweets')
+          'handle.created_at',
+          'handle.updated_at',
+          'tweet.tweets'
         ])
+        .from(function () {
+          this
+            .select([
+              'tweet.user_id',
+              knex.raw('count(tweet.id) as tweets')
+            ])
+            .from('tweet')
+            .whereBetween('tweet.created_at', [
+              knex.raw(`(now() - '${days} day'::interval)::timestamp`),
+              knex.raw('now()')
+            ])
+            .groupBy('tweet.user_id')
+            .orderBy('tweets', 'desc')
+            .as('tweet')
+        })
         .join('handle', 'tweet.user_id', 'handle.id')
         .join('camp', 'handle.camp_id', 'camp.id')
-        .whereBetween('tweet.created_at', [
-          knex.raw('(now() - \'7 day\'::interval)::timestamp'),
-          knex.raw('now()')
-        ])
-        .groupBy('handle.id', 'camp.id')
-        .orderBy('tweets', 'desc')
+        .limit(limit)
         .then((handles) => handles.map((handle) => ({
           id: handle.id,
           username: handle.username,
