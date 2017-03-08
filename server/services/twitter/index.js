@@ -234,7 +234,8 @@ internals.transform = (tweet) => ({
     location: tweet.user.location,
     url: tweet.user.url,
     description: tweet.user.description,
-    profile_image_url: tweet.user.profile_image_url_https,
+    profile_image_url: `https://twitter.com/${tweet.user.screen_name}/profile_image?size=original`,
+    profile_avatar_url: `https://twitter.com/${tweet.user.screen_name}/profile_image?size=normal`,
     verified: tweet.user.verified,
     created_at: new Date(tweet.user.created_at)
   },

@@ -128,7 +128,7 @@ internals.init = (server, next) => {
       username: profile.screen_name,
       name: profile.name,
       profile: {
-        image: profile.profile_image_url_https,
+        image: `https://twitter.com/${profile.screen_name}/profile_image?size=original`,
         description: profile.description
       },
       camp_id: campId
