@@ -12,6 +12,9 @@ Promise.promisifyAll(Twitter.prototype)
 
 const internals = {}
 
+const MAX_USERS = 5000
+const MAX_KEYWORDS = 400
+
 internals.dependencies = ['hapi-io', 'database', 'services/topic', 'services/contribution']
 
 internals.init = function (server, options, next) {
@@ -207,16 +210,16 @@ internals.init = function (server, options, next) {
     Topic.collection().fetch(),
     Handle.collection().fetch()
   ).spread((topics, handles) => {
-    if (topics.length) {
-      topics = topics.pluck('keywords')
-        .reduce((memo, keywords) => memo.concat(keywords), [])
-      track(topics)
-    }
+    let users = handles.pluck('id').slice(0, MAX_USERS)
+    let keywords = topics.pluck('keywords')
+      .reduce((memo, keywords) => memo.concat(keywords), [])
+      .concat(handles.pluck('username').map((username) => `@${username}`))
+      .slice(0, MAX_KEYWORDS)
 
-    if (handles.length) {
-      follow(handles.pluck('id'))
-      track(handles.pluck('username').map((username) => `@${username}`))
-    }
+    log(`following ${users.length} users and ${keywords.length} keywords`)
+
+    users.length && follow(users)
+    keywords.length && track(keywords)
 
     reconnect()
   }).nodeify(next)
