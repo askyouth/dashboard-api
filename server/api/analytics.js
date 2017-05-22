@@ -19,42 +19,43 @@ internals.applyRoutes = (server, next) => {
       description: 'Get Klout score changes'
     },
     handler (request, reply) {
-      let handles = knex('klout_score')
-        .select([
-          knex.raw('distinct on (handle.id) handle.id'),
-          'handle.username',
-          'handle.name',
-          'handle.profile',
-          'handle.camp_id',
-          'camp.name as camp_name',
-          'handle.klout_id',
-          'handle.klout_score',
-          'klout_score.delta_week'
-        ])
-        .join('handle', 'klout_score.handle_id', 'handle.id')
-        .join('camp', 'handle.camp_id', 'camp.id')
-        .whereNot('handle.camp_id', Camp.BROKER)
-        .whereBetween('klout_score.created_at', [
-          knex.raw('(now() - \'7 day\'::interval)::timestamp'),
-          knex.raw('now()')
-        ])
-        .orderBy(['handle.id', 'klout_score.id'], 'desc')
-        .then((handles) => handles.map((handle) => ({
-          id: handle.id,
-          username: handle.username,
-          name: handle.name,
-          profile: handle.profile,
-          camp_id: handle.camp_id,
-          camp: {
-            id: handle.camp_id,
-            name: handle.camp_name
-          },
-          klout_id: handle.klout_id,
-          klout_score: handle.klout_score,
-          klout_delta: handle.delta_week,
-          created_at: handle.created_at,
-          updated_at: handle.updated_at
-        })))
+      let handles = knex
+        .select('*')
+        .from(function () {
+          this
+            .select([
+              '*',
+              knex.raw(`row_number() over (partition by (klout_delta < 0)
+                                            order by abs(klout_delta) desc) as rownum`)
+            ])
+            .from(function () {
+              this
+                .select([
+                  knex.raw('distinct on (ks.handle_id) h.id'),
+                  'h.username',
+                  'h.name',
+                  'h.profile',
+                  'h.camp_id',
+                  'c.name as camp_name',
+                  'h.klout_id',
+                  'h.klout_score',
+                  'ks.delta_week as klout_delta'
+                ])
+                .from('klout_score as ks')
+                .join('handle as h', 'ks.handle_id', 'h.id')
+                .join('camp as c', 'h.camp_id', 'c.id')
+                .whereNot('c.id', Camp.BROKER)
+                .whereBetween('ks.created_at', [
+                  knex.raw(`(now() - '7 day'::interval)::timestamp`),
+                  knex.raw('now()')
+                ])
+                .orderBy('ks.handle_id')
+                .orderBy('ks.created_at', 'desc')
+                .as('p1')
+            })
+            .as('p2')
+        })
+        .where('rownum', '<=', 5)
 
       reply(handles)
     }
