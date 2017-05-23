@@ -73,13 +73,10 @@ module.exports = (bookshelf) => bookshelf.Model.extend({
    * overriding underlying querybuilder.
    */
 
-  parse (result) {
-    return Object.keys(result).reduce((memo, key) => {
-      if (this.schema[key]) {
-        memo[key] = result[key]
-      }
-      return memo
-    }, {})
+  parse (attrs) {
+    let result = Joi.validate(attrs, this.schema, { stripUnknown: true })
+    if (result.error) return attrs
+    return result.value
   },
 
   /**

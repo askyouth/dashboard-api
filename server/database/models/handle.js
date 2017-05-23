@@ -14,7 +14,7 @@ module.exports = (BaseModel, bookshelf) => BaseModel.extend({
       image: Joi.string().uri(),
       description: Joi.string().allow('')
     }),
-    klout_id: Joi.number().integer().allow(null),
+    klout_id: Joi.string().allow(null),
     klout_score: Joi.number().allow(null),
     camp_id: Joi.number().integer().allow(null)
   },
