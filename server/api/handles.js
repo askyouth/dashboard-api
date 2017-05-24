@@ -13,12 +13,14 @@ const internals = {}
 internals.dependencies = [
   'database',
   'services/handle',
+  'services/topic',
   'services/twitter'
 ]
 
 internals.applyRoutes = (server, next) => {
   const TwitterService = server.plugins['services/twitter']
   const HandleService = server.plugins['services/handle']
+  const TopicService = server.plugins['services/topic']
   const Database = server.plugins.database
   const Handle = Database.model('Handle')
   const Topic = Database.model('Topic')
@@ -265,6 +267,16 @@ internals.applyRoutes = (server, next) => {
       validate: {
         params: {
           handleId: Joi.string().required()
+        },
+        query: {
+          filter: Joi.object({
+            search: Joi.string()
+          }).default({}),
+          page: Joi.number().integer().default(1),
+          pageSize: Joi.number().integer().default(20),
+          sort: Joi.string().valid(['name']).default('name'),
+          sortOrder: Joi.string().valid(['asc', 'desc']).default('asc'),
+          related: Joi.array().items(Joi.string().valid(['handles'])).default([])
         }
       },
       pre: [{
@@ -273,7 +285,22 @@ internals.applyRoutes = (server, next) => {
     },
     handler (request, reply) {
       let handle = request.pre.handle
-      let topics = handle.related('topics').fetch()
+      let page = request.query.page
+      let pageSize = request.query.pageSize
+      let sort = request.query.sort
+      let sortOrder = request.query.sortOrder
+      let related = request.query.related
+      let filter = Object.assign({
+        handle: handle.get('id')
+      }, request.query.filter)
+
+      let topics = TopicService.fetch(filter, {
+        sortBy: sort,
+        sortOrder: sortOrder,
+        page: page,
+        pageSize: pageSize,
+        withRelated: related
+      })
 
       reply(topics)
     }

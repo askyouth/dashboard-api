@@ -11,8 +11,24 @@ exports.register = function (server, options, next) {
   const Database = server.plugins.database
   const Topic = Database.model('Topic')
 
-  function fetch (query, opts) {
+  function prepareQuery (query) {
     query || (query = {})
+    return Topic.query((qb) => {
+      if (query.handle) {
+        qb.innerJoin('handle_topic', 'topic.id', 'handle_topic.topic_id')
+        qb.groupBy('topic.id')
+        qb.where('handle_topic.handle_id', query.handle)
+      }
+      if (query.search) {
+        qb.where(function () {
+          this.where('topic.name', 'ilike', `%${query.search}%`)
+            .orWhere('topic.description', 'ilike', `%${query.search}%`)
+        })
+      }
+    })
+  }
+
+  function fetch (query, opts) {
     opts || (opts = {})
     let sortBy = opts.sortBy || 'name'
     let sortOrder = opts.sortOrder || 'asc'
@@ -23,15 +39,7 @@ exports.register = function (server, options, next) {
       pageSize: pageSize
     }, _.pick(opts, ['withRelated']))
 
-    return Topic
-      .query((qb) => {
-        if (query.search) {
-          qb.where(function () {
-            this.where('topic.name', 'ilike', `%${query.search}%`)
-              .orWhere('topic.description', 'ilike', `%${query.search}%`)
-          })
-        }
-      })
+    return prepareQuery(query)
       .orderBy(sortBy, sortOrder)
       .fetchPage(fetchOpts)
   }
