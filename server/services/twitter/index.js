@@ -55,7 +55,7 @@ internals.init = function (server, options, next) {
   }
 
   function tweetHandler (tweet) {
-    storeTweet(tweet)
+    storeTweet(internals.transform(tweet))
       .then((tweet) => [
         tweet,
         TopicService.process(tweet),
@@ -66,7 +66,7 @@ internals.init = function (server, options, next) {
   }
 
   function storeTweet (tweet) {
-    return Tweet.forge(internals.transform(tweet))
+    return Tweet.forge(tweet)
       .save(null, { method: 'insert' })
   }
 
@@ -244,7 +244,13 @@ internals.transform = (tweet) => ({
   },
   favorited: tweet.favorited,
   retweeted: tweet.retweeted,
-  entities: tweet.entities,
+  entities: Object.assign(tweet.entities, {
+    user_mentions: _.map(tweet.entities.user_mentions, (user) => ({
+      id: user.id_str,
+      name: user.name,
+      screen_name: user.screen_name
+    }))
+  }),
   extended_entities: tweet.extended_entities,
   parent_id: tweet.in_reply_to_status_id_str,
   in_reply_to_user_id: tweet.in_reply_to_user_id_str,
