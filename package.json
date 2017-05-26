@@ -4,7 +4,7 @@
   "description": "Dashboard API",
   "main": "index.js",
   "engines": {
-    "node": ">=4 <5"
+    "node": ">=6 <7"
   },
   "scripts": {
     "start": "node -r dotenv/config server.js",
