@@ -28,13 +28,14 @@ class Rule {
 
   match (ctx) {
     return Promise.reduce(this._match, (memo, cond) => {
-      if (!memo) return
-      return Promise.resolve(cond(ctx)).then((result) => memo && !!result)
+      return memo && Promise.try(cond.bind(null, ctx))
+        .then((result) => !!result)
+        .catch(() => false)
     }, true)
   }
 
   exec (ctx) {
-    return this._action(ctx)
+    return Promise.try(this._action.bind(null, ctx))
   }
 
   describe () {
@@ -53,15 +54,12 @@ class Evaluator {
 
   run (ctx) {
     return Promise.reduce(this.rules, (ctx, rule) => {
-      return Promise.resolve(rule.match(ctx))
-        .catch(() => false)
-        .then((result) => {
-          if (!result) return ctx
-          return Promise.resolve(rule.exec(ctx)).then((result) => {
-            return Object.assign(ctx, result)
-          })
+      return rule.match(ctx).then((result) => {
+        if (!result) return ctx
+        return rule.exec(ctx).then((result) => {
+          return Object.assign(ctx, result)
         })
-        .catch(() => ctx)
+      }).catch(() => ctx)
     }, ctx)
   }
 }
