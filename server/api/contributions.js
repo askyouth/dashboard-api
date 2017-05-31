@@ -3,6 +3,7 @@
 // Module dependencies.
 const Joi = require('joi')
 const Boom = require('boom')
+const Promise = require('bluebird')
 
 const NotFoundError = Boom.notFound
 
@@ -62,15 +63,18 @@ internals.applyRoutes = (server, next) => {
       let sortOrder = request.query.sortOrder
       let related = ['tweet']
 
-      let contributions = ContributionService.fetch(filter, {
-        sortBy: sort,
-        sortOrder: sortOrder,
-        page: page,
-        pageSize: pageSize,
-        withRelated: related
+      let result = Promise.props({
+        contributions: ContributionService.fetch(filter, {
+          sortBy: sort,
+          sortOrder: sortOrder,
+          page: page,
+          pageSize: pageSize,
+          withRelated: related
+        }),
+        count: ContributionService.count(filter)
       })
 
-      reply(contributions)
+      reply(result)
     }
   })
 

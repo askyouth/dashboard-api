@@ -211,7 +211,7 @@ exports.register = function (server, options, next) {
       .fetchPage(fetchOpts)
   }
 
-  function count (query, opts) {
+  function count (query) {
     return prepareQuery(query)
       .count()
       .then((count) => +count)
