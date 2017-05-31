@@ -2,6 +2,7 @@
 
 // Module dependencies.
 const Joi = require('joi')
+const Promise = require('bluebird')
 
 const internals = {}
 
@@ -227,15 +228,18 @@ internals.applyRoutes = function (server, next) {
         topic: topic.get('id')
       }, request.query.filter)
 
-      let handles = HandleService.fetch(filter, {
-        sortBy: sort,
-        sortOrder: sortOrder,
-        page: page,
-        pageSize: pageSize,
-        withRelated: related
+      let result = Promise.props({
+        handles: HandleService.fetch(filter, {
+          sortBy: sort,
+          sortOrder: sortOrder,
+          page: page,
+          pageSize: pageSize,
+          withRelated: related
+        }),
+        count: HandleService.count(filter)
       })
 
-      reply(handles)
+      reply(result)
     }
   })
 
