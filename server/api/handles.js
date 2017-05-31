@@ -294,15 +294,18 @@ internals.applyRoutes = (server, next) => {
         handle: handle.get('id')
       }, request.query.filter)
 
-      let topics = TopicService.fetch(filter, {
-        sortBy: sort,
-        sortOrder: sortOrder,
-        page: page,
-        pageSize: pageSize,
-        withRelated: related
+      let result = Promise.props({
+        topics: TopicService.fetch(filter, {
+          sortBy: sort,
+          sortOrder: sortOrder,
+          page: page,
+          pageSize: pageSize,
+          withRelated: related
+        }),
+        count: TopicService.count(filter)
       })
 
-      reply(topics)
+      reply(result)
     }
   })
 

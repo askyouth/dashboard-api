@@ -44,6 +44,12 @@ exports.register = function (server, options, next) {
       .fetchPage(fetchOpts)
   }
 
+  function count (query) {
+    return prepareQuery(query)
+      .count()
+      .then((count) => +count)
+  }
+
   function process (tweet) {
     return Topic
       .collection()
@@ -62,6 +68,7 @@ exports.register = function (server, options, next) {
   }
 
   server.expose('fetch', fetch)
+  server.expose('count', count)
   server.expose('process', process)
 
   next()
