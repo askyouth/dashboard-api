@@ -5,8 +5,7 @@ const Joi = require('joi')
 const JWT = require('jsonwebtoken')
 const Uuid = require('node-uuid')
 const Errors = require('./errors')
-const Promise = require('bluebird')
-const Bcrypt = Promise.promisifyAll(require('bcrypt'))
+const Bcrypt = require('bcrypt')
 
 const AuthenticationError = Errors.AuthenticationError
 const PasswordRecoveryError = Errors.PasswordRecoveryError
@@ -42,12 +41,12 @@ internals.applyStrategy = (server, options, next) => {
   }
 
   function generatePasswordHash (password) {
-    return Bcrypt.hashAsync(password, 10)
+    return Bcrypt.hash(password, 10)
   }
 
   function authenticate (user, password) {
     let passwordHash = user.get('password')
-    return Bcrypt.compareAsync(password, passwordHash).then((res) => {
+    return Bcrypt.compare(password, passwordHash).then((res) => {
       if (!res) throw new AuthenticationError()
     })
   }
@@ -78,14 +77,14 @@ internals.applyStrategy = (server, options, next) => {
   function generateTokenHash () {
     let token = Uuid.v4()
 
-    return Bcrypt.hashAsync(token, 10).then((hash) => ({
+    return Bcrypt.hash(token, 10).then((hash) => ({
       token: token,
       hash: hash
     }))
   }
 
   function validateTokenHash (user, token) {
-    return Bcrypt.compareAsync(token, user.get('password_reset')).then((res) => {
+    return Bcrypt.compare(token, user.get('password_reset')).then((res) => {
       if (!res) throw new PasswordRecoveryError()
     })
   }
