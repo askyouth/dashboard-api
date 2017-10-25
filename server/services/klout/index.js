@@ -3,18 +3,21 @@
 // Module dependencies.
 const Joi = require('joi')
 const Klout = require('node_klout')
+const Deputy = require('hapi-deputy')
 const Promise = require('bluebird')
 const perioda = require('perioda')
 
 Promise.promisifyAll(Klout.prototype)
 
-const internals = {}
+exports.validate = {
+  schema: {
+    auth: Joi.string().required(),
+    interval: Joi.number().integer().required()
+  },
+  message: 'Invalid Klout configuration.'
+}
 
-internals.dependencies = [
-  'services/database'
-]
-
-internals.init = function (server, options, next) {
+exports.register = function (server, options, next) {
   const Database = server.plugins['services/database']
 
   const Handle = Database.model('Handle')
@@ -70,26 +73,11 @@ internals.init = function (server, options, next) {
   next()
 }
 
-exports.register = function (server, options, next) {
-  const schema = Joi.object({
-    auth: Joi.string().required(),
-    interval: Joi.number().integer().required()
-  })
-
-  try {
-    options = Joi.attempt(options, schema, 'Invalid Klout configuration')
-  } catch (err) {
-    return next(err)
-  }
-
-  server.dependency(internals.dependencies, (server, next) => {
-    internals.init(server, options, next)
-  })
-
-  next()
-}
-
 exports.register.attributes = {
   name: 'services/klout',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/database'
+  ]
 }
+
+module.exports = Deputy(exports)

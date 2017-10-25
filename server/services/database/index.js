@@ -5,23 +5,20 @@ const Joi = require('joi')
 const Knex = require('knex')
 const Bookshelf = require('bookshelf')
 const Path = require('path')
+const Deputy = require('hapi-deputy')
 
-exports.register = (server, options, next) => {
-  const log = server.log.bind(server, ['services', 'database'])
-
-  let schema = Joi.object({
+exports.validate = {
+  schema: {
     knex: Joi.object().required(),
     models: Joi.object().required(),
     baseModel: Joi.string().optional(),
     plugins: Joi.array().items(Joi.string()).default([])
-  })
+  },
+  message: 'Invalid database configuration.'
+}
 
-  // validate options
-  try {
-    Joi.assert(options, schema, 'Invalid database configuration')
-  } catch (err) {
-    return next(err)
-  }
+exports.register = (server, options, next) => {
+  const log = server.log.bind(server, ['services', 'database'])
 
   // initialize bookshelf
   log(`knex options: ${JSON.stringify(options.knex)}`)
@@ -63,3 +60,5 @@ exports.register = (server, options, next) => {
 exports.register.attributes = {
   name: 'services/database'
 }
+
+module.exports = Deputy(exports)

@@ -3,19 +3,11 @@
 // Module dependencies.
 const Joi = require('joi')
 const Boom = require('boom')
+const Deputy = require('hapi-deputy')
 const Promise = require('bluebird')
 const _ = require('lodash')
 
-const internals = {}
-
-internals.dependencies = [
-  'services/auth',
-  'services/database',
-  'modules/handle',
-  'modules/contribution'
-]
-
-internals.applyRoutes = (server, next) => {
+exports.register = function (server, options, next) {
   const Auth = server.plugins['services/auth']
   const Database = server.plugins['services/database']
   const Handles = server.plugins['modules/handle']
@@ -100,12 +92,14 @@ internals.applyRoutes = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-  next()
-}
-
 exports.register.attributes = {
   name: 'api/account',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/auth',
+    'services/database',
+    'modules/handle',
+    'modules/contribution'
+  ]
 }
+
+module.exports = Deputy(exports)

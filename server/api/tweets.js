@@ -4,21 +4,9 @@
 const Fs = require('fs')
 const Joi = require('joi')
 const Boom = require('boom')
+const Deputy = require('hapi-deputy')
 
-const NotFoundError = Boom.notFound
-const BadRequestError = Boom.badRequest
-
-const internals = {}
-
-internals.dependencies = [
-  'hapi-io',
-  'services/file',
-  'services/twitter',
-  'services/database',
-  'modules/tweet'
-]
-
-internals.applyRoutes = (server, next) => {
+exports.register = function (server, options, next) {
   const File = server.plugins['services/file']
   const Twitter = server.plugins['services/twitter']
   const Database = server.plugins['services/database']
@@ -31,9 +19,7 @@ internals.applyRoutes = (server, next) => {
     let tweetId = request.params.id
     let tweet = Tweet.forge({ id: tweetId })
       .fetch({ require: true })
-      .catch(Tweet.NotFoundError, () => {
-        throw new NotFoundError('Tweet not found')
-      })
+      .catch(Tweet.NotFoundError, () => Boom.notFound('Tweet not found'))
 
     reply(tweet)
   }
@@ -205,7 +191,7 @@ internals.applyRoutes = (server, next) => {
           // tweet deleted
           if (err.code === 144) {
             return tweet.destroy().then(() => {
-              throw new BadRequestError('Tweet deleted')
+              throw Boom.badRequest('Tweet deleted')
             })
           }
         })
@@ -237,7 +223,7 @@ internals.applyRoutes = (server, next) => {
           // tweet deleted
           if (err.code === 144) {
             return tweet.destroy().then(() => {
-              throw new BadRequestError('Tweet deleted')
+              throw Boom.badRequest('Tweet deleted')
             })
           }
         })
@@ -269,7 +255,7 @@ internals.applyRoutes = (server, next) => {
           // tweet deleted
           if (err.code === 144) {
             return tweet.destroy().then(() => {
-              throw new BadRequestError('Tweet deleted')
+              throw Boom.badRequest('Tweet deleted')
             })
           }
         })
@@ -282,12 +268,15 @@ internals.applyRoutes = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-  next()
-}
-
 exports.register.attributes = {
   name: 'api/interactions',
-  dependencies: internals.dependencies
+  dependencies: [
+    'hapi-io',
+    'services/file',
+    'services/twitter',
+    'services/database',
+    'modules/tweet'
+  ]
 }
+
+module.exports = Deputy(exports)

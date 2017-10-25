@@ -3,15 +3,9 @@
 // Module dependencies.
 const Joi = require('joi')
 const Boom = require('boom')
+const Deputy = require('hapi-deputy')
 
-const internals = {}
-
-internals.dependencies = [
-  'services/file',
-  'services/database'
-]
-
-internals.applyRoutes = (server, next) => {
+exports.register = function (server, options, next) {
   const File = server.plugins['services/file']
   const Database = server.plugins['services/database']
 
@@ -22,7 +16,7 @@ internals.applyRoutes = (server, next) => {
 
     let infographic = Infographic.forge({ id: infographicId })
       .fetch({ require: true })
-      .catch(Infographic.NotFoundError, () => Boom.notFound())
+      .catch(Infographic.NotFoundError, () => Boom.notFound('Infographic not found'))
 
     reply(infographic)
   }
@@ -198,11 +192,12 @@ internals.applyRoutes = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-  next()
+exports.register.attributes = {
+  name: 'api/infographics',
+  dependencies: [
+    'services/file',
+    'services/database'
+  ]
 }
 
-exports.register.attributes = {
-  name: 'api/infographics'
-}
+module.exports = Deputy(exports)

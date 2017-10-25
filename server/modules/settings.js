@@ -1,14 +1,9 @@
 'use strict'
 
 // Module dependencies.
+const Deputy = require('hapi-deputy')
 
-const internals = {}
-
-internals.dependencies = [
-  'services/database'
-]
-
-internals.init = (server, next) => {
+exports.register = function (server, options, next) {
   const Database = server.plugins['services/database']
 
   const Settings = Database.model('Settings')
@@ -84,12 +79,11 @@ internals.init = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.init)
-  next()
-}
-
 exports.register.attributes = {
   name: 'modules/settings',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/database'
+  ]
 }
+
+module.exports = Deputy(exports)

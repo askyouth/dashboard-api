@@ -2,14 +2,9 @@
 
 // Module dependencies.
 const Joi = require('joi')
+const Deputy = require('hapi-deputy')
 
-const internals = {}
-
-internals.dependencies = [
-  'services/database'
-]
-
-internals.applyRoutes = (server, next) => {
+exports.register = function (server, options, next) {
   const Database = server.plugins['services/database']
 
   const knex = Database.knex
@@ -185,11 +180,11 @@ internals.applyRoutes = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-  next()
+exports.register.attributes = {
+  name: 'api/analytics',
+  dependencies: [
+    'services/database'
+  ]
 }
 
-exports.register.attributes = {
-  name: 'api/analytics'
-}
+module.exports = Deputy(exports)

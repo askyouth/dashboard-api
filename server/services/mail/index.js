@@ -3,14 +3,15 @@
 // Module dependencies.
 const Joi = require('joi')
 const Path = require('path')
+const Deputy = require('hapi-deputy')
 const Promise = require('bluebird')
 const Handlebars = require('handlebars')
 const Nodemailer = require('nodemailer')
 const Markdown = require('nodemailer-markdown').markdown
 const readFile = Promise.promisify(require('fs').readFile)
 
-exports.register = function (server, options, next) {
-  const schema = {
+exports.validate = {
+  schema: {
     transport: Joi.object({
       host: Joi.string().required(),
       port: Joi.number().integer().required(),
@@ -22,14 +23,11 @@ exports.register = function (server, options, next) {
     }),
     fromAddress: Joi.string().email(),
     templateDir: Joi.string().required()
-  }
+  },
+  message: 'Invalid mail configuration.'
+}
 
-  try {
-    options = Joi.attempt(options, schema, 'Invalid mail options.')
-  } catch (err) {
-    return next(err)
-  }
-
+exports.register = function (server, options, next) {
   const transport = Nodemailer.createTransport(options.transport)
   transport.use('compile', Markdown({ useEmbeddedImages: true }))
 
@@ -71,3 +69,5 @@ exports.register = function (server, options, next) {
 exports.register.attributes = {
   name: 'services/mail'
 }
+
+module.exports = Deputy(exports)

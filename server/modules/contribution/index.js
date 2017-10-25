@@ -2,14 +2,9 @@
 
 // Module dependencies.
 const Evaluator = require('./evaluator')
+const Deputy = require('hapi-deputy')
 const Promise = require('bluebird')
 const _ = require('lodash')
-
-const internals = {}
-
-internals.dependencies = [
-  'services/database'
-]
 
 exports.register = function (server, options, next) {
   const Database = server.plugins['services/database']
@@ -230,5 +225,9 @@ exports.register = function (server, options, next) {
 
 exports.register.attributes = {
   name: 'modules/contribution',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/database'
+  ]
 }
+
+module.exports = Deputy(exports)

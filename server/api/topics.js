@@ -2,18 +2,10 @@
 
 // Module dependencies.
 const Joi = require('joi')
+const Deputy = require('hapi-deputy')
 const Promise = require('bluebird')
 
-const internals = {}
-
-internals.dependencies = [
-  'services/twitter',
-  'services/database',
-  'modules/topic',
-  'modules/handle'
-]
-
-internals.applyRoutes = function (server, next) {
+exports.register = function (server, options, next) {
   const Twitter = server.plugins['services/twitter']
   const Database = server.plugins['services/database']
   const Topics = server.plugins['modules/topic']
@@ -247,12 +239,14 @@ internals.applyRoutes = function (server, next) {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-  next()
-}
-
 exports.register.attributes = {
   name: 'api/topics',
-  dependecies: internals.dependencies
+  dependencies: [
+    'services/twitter',
+    'services/database',
+    'modules/topic',
+    'modules/handle'
+  ]
 }
+
+module.exports = Deputy(exports)

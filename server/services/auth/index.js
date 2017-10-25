@@ -6,18 +6,20 @@ const JWT = require('jsonwebtoken')
 const Uuid = require('node-uuid')
 const Errors = require('./errors')
 const Bcrypt = require('bcrypt')
+const Deputy = require('hapi-deputy')
 const Promise = require('bluebird')
 
 const AuthenticationError = Errors.AuthenticationError
 const PasswordRecoveryError = Errors.PasswordRecoveryError
 
-const internals = {}
+exports.validate = {
+  schema: {
+    secret: Joi.string().required()
+  },
+  message: 'Invalid auth configuration.'
+}
 
-internals.dependencies = [
-  'services/database'
-]
-
-internals.applyStrategy = (server, options, next) => {
+exports.register = function (server, options, next) {
   const Database = server.plugins['services/database']
 
   const Session = Database.model('Session')
@@ -29,6 +31,7 @@ internals.applyStrategy = (server, options, next) => {
       algorithms: ['HS256']
     }
   })
+
   server.auth.default('jwt')
 
   function validate (token, request, cb) {
@@ -107,24 +110,11 @@ internals.applyStrategy = (server, options, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  const schema = Joi.object({
-    secret: Joi.string().required()
-  })
-
-  try {
-    Joi.assert(options, schema, 'Invalid auth configuration')
-  } catch (err) {
-    return next(err)
-  }
-
-  server.dependency(internals.dependencies,
-    (server, next) => internals.applyStrategy(server, options, next))
-
-  next()
-}
-
 exports.register.attributes = {
   name: 'services/auth',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/database'
+  ]
 }
+
+module.exports = Deputy(exports)

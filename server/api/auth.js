@@ -4,17 +4,9 @@
 const Joi = require('joi')
 const Boom = require('boom')
 const Config = require('config')
+const Deputy = require('hapi-deputy')
 
-const internals = {}
-
-internals.dependencies = [
-  'services/auth',
-  'services/mail',
-  'services/database',
-  'modules/settings'
-]
-
-internals.applyRoutes = (server, next) => {
+exports.register = function (server, options, next) {
   const Auth = server.plugins['services/auth']
   const Mail = server.plugins['services/mail']
   const Database = server.plugins['services/database']
@@ -41,7 +33,7 @@ internals.applyRoutes = (server, next) => {
         method (request, reply) {
           let promise = Settings.getValue('signup.enabled').then((enabled) => {
             if (!enabled) {
-              return Boom.forbidden('Signup is disabled.')
+              return Boom.forbidden('Signup is disabled')
             }
           })
           reply(promise)
@@ -53,7 +45,7 @@ internals.applyRoutes = (server, next) => {
 
           let user = User.forge({ email: email })
             .fetch({ require: true })
-            .then((user) => Boom.conflict('Email already in use.'))
+            .then((user) => Boom.conflict('Email already in use'))
             .catch(User.NotFoundError, () => {})
 
           reply(user)
@@ -278,7 +270,7 @@ internals.applyRoutes = (server, next) => {
 
           let user = User.forge({ id: userId })
             .fetch({ require: true })
-            .catch(User.NotFoundError, () => Boom.notFound())
+            .catch(User.NotFoundError, () => Boom.badRequest())
 
           reply(user)
         }
@@ -289,7 +281,7 @@ internals.applyRoutes = (server, next) => {
           let token = request.payload.token
 
           let promise = Auth.validateTokenHash(user, token)
-            .catch(Auth.PasswordRecoveryError, () => Boom.badRequest('Invalid token.'))
+            .catch(Auth.PasswordRecoveryError, () => Boom.badRequest())
 
           reply(promise)
         }
@@ -350,12 +342,14 @@ internals.applyRoutes = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-  next()
-}
-
 exports.register.attributes = {
   name: 'api/auth',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/auth',
+    'services/mail',
+    'services/database',
+    'modules/settings'
+  ]
 }
+
+module.exports = Deputy(exports)

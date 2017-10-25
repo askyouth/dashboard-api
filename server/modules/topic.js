@@ -1,13 +1,8 @@
 'use strict'
 
 // Module dependencies.
+const Deputy = require('hapi-deputy')
 const _ = require('lodash')
-
-const internals = {}
-
-internals.dependencies = [
-  'services/database'
-]
 
 exports.register = function (server, options, next) {
   const Database = server.plugins['services/database']
@@ -79,5 +74,9 @@ exports.register = function (server, options, next) {
 
 exports.register.attributes = {
   name: 'modules/topic',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/database'
+  ]
 }
+
+module.exports = Deputy(exports)

@@ -3,21 +3,10 @@
 // Module dependencies.
 const Joi = require('joi')
 const Boom = require('boom')
+const Deputy = require('hapi-deputy')
 const Promise = require('bluebird')
 
-const NotFoundError = Boom.notFound
-const BadRequestError = Boom.badRequest
-
-const internals = {}
-
-internals.dependencies = [
-  'services/twitter',
-  'services/database',
-  'modules/topic',
-  'modules/handle'
-]
-
-internals.applyRoutes = (server, next) => {
+exports.register = function (server, options, next) {
   const Twitter = server.plugins['services/twitter']
   const Database = server.plugins['services/database']
   const Topics = server.plugins['modules/topic']
@@ -30,9 +19,7 @@ internals.applyRoutes = (server, next) => {
     let handleId = request.params.handleId
     let handle = Handle.forge({ id: handleId })
       .fetch({ require: true })
-      .catch(Handle.NotFoundError, () => {
-        throw NotFoundError('Handle not found')
-      })
+      .catch(Handle.NotFoundError, () => Boom.notFound('Handle not found'))
 
     reply(handle)
   }
@@ -41,9 +28,7 @@ internals.applyRoutes = (server, next) => {
     let topicId = request.params.topicId
     let topic = Topic.forge({ id: topicId })
       .fetch({ require: true })
-      .catch(Topic.NotFoundError, () => {
-        throw NotFoundError('Topic not found')
-      })
+      .catch(Topic.NotFoundError, () => Boom.notFound('Topic not found'))
 
     reply(topic)
   }
@@ -110,9 +95,7 @@ internals.applyRoutes = (server, next) => {
 
           let handle = Handle.forge({ username })
             .fetch({ require: true })
-            .then((handle) => {
-              throw new BadRequestError('Handle already exist')
-            })
+            .then((handle) => Boom.badRequest('Handle already exist'))
             .catch(Handle.NotFoundError, () => {})
 
           reply(handle)
@@ -363,7 +346,7 @@ internals.applyRoutes = (server, next) => {
         .then((topics) => {
           let topic = topics.shift()
           if (!topic) {
-            throw new BadRequestError('Topic not attached')
+            throw Boom.badRequest('Topic not attached')
           }
           return handle.topics().detach(topic)
         })
@@ -375,12 +358,14 @@ internals.applyRoutes = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-  next()
-}
-
 exports.register.attributes = {
   name: 'api/handles',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/twitter',
+    'services/database',
+    'modules/topic',
+    'modules/handle'
+  ]
 }
+
+module.exports = Deputy(exports)

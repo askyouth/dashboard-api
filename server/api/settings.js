@@ -2,16 +2,10 @@
 
 // Module dependencies.
 const cache = require('arr-cache')
+const Deputy = require('hapi-deputy')
 const Promise = require('bluebird')
 
-const internals = {}
-
-internals.dependencies = [
-  'services/twitter',
-  'modules/settings'
-]
-
-internals.applyRoutes = (server, next) => {
+exports.register = function (server, options, next) {
   const Twitter = server.plugins['services/twitter']
   const Settings = server.plugins['modules/settings']
 
@@ -25,8 +19,7 @@ internals.applyRoutes = (server, next) => {
       auth: false
     },
     handler (request, reply) {
-      let keys = ['signup.enabled']
-      let config = Settings.get(keys)
+      let config = Settings.get(['signup.enabled'])
       reply(config)
     }
   })
@@ -86,13 +79,12 @@ internals.applyRoutes = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-
-  next()
-}
-
 exports.register.attributes = {
   name: 'api/settings',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/twitter',
+    'modules/settings'
+  ]
 }
+
+module.exports = Deputy(exports)

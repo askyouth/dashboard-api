@@ -2,26 +2,18 @@
 
 // Module dependencies.
 const perioda = require('perioda')
+const Deputy = require('hapi-deputy')
 const Promise = require('bluebird')
 const _ = require('lodash')
 
-const internals = {}
-
-internals.dependencies = [
-  'services/klout',
-  'services/twitter',
-  'services/database',
-  'modules/settings'
-]
-
-internals.init = (server, next) => {
+exports.register = function (server, options, next) {
   const Klout = server.plugins['services/klout']
   const Twitter = server.plugins['services/twitter']
   const Database = server.plugins['services/database']
   const Settings = server.plugins['modules/settings']
 
-  const Handle = Database.model('Handle')
   const Camp = Database.model('Camp')
+  const Handle = Database.model('Handle')
   const log = server.log.bind(server, ['services', 'handle'])
 
   const campSettingsMap = {
@@ -168,12 +160,14 @@ internals.init = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.init)
-  next()
-}
-
 exports.register.attributes = {
   name: 'modules/handle',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/klout',
+    'services/twitter',
+    'services/database',
+    'modules/settings'
+  ]
 }
+
+module.exports = Deputy(exports)

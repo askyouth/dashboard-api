@@ -4,21 +4,10 @@
 const Joi = require('joi')
 const Boom = require('boom')
 const Config = require('config')
+const Deputy = require('hapi-deputy')
 const Promise = require('bluebird')
 
-const NotFoundError = Boom.notFound
-const BadRequestError = Boom.badRequest
-
-const internals = {}
-
-internals.dependencies = [
-  'services/auth',
-  'services/mail',
-  'services/database',
-  'modules/user'
-]
-
-internals.applyRoutes = (server, next) => {
+exports.register = function (server, options, next) {
   const Mail = server.plugins['services/mail']
   const Auth = server.plugins['services/auth']
   const Database = server.plugins['services/database']
@@ -30,9 +19,7 @@ internals.applyRoutes = (server, next) => {
     let userId = request.params.userId
     let user = User.forge({ id: userId })
       .fetch({ require: true })
-      .catch(User.NotFoundError, () => {
-        throw NotFoundError('User not found')
-      })
+      .catch(User.NotFoundError, () => Boom.notFound('User not found'))
 
     reply(user)
   }
@@ -93,7 +80,7 @@ internals.applyRoutes = (server, next) => {
 
           let user = User.forge({ email })
             .fetch({ require: true })
-            .then((user) => BadRequestError('Email already in use.'))
+            .then((user) => Boom.badRequest('Email already in use'))
             .catch(User.NotFoundError, () => {})
 
           reply(user)
@@ -200,12 +187,14 @@ internals.applyRoutes = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-  next()
-}
-
 exports.register.attributes = {
   name: 'api/users',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/auth',
+    'services/mail',
+    'services/database',
+    'modules/user'
+  ]
 }
+
+module.exports = Deputy(exports)

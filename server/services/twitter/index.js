@@ -5,24 +5,30 @@ const Joi = require('joi')
 const Twitter = require('./client')
 const TwitterStream = require('node-tweet-stream')
 const TwitterUploadStream = require('./upload-stream')
+const Deputy = require('hapi-deputy')
 const Promise = require('bluebird')
 const _ = require('lodash')
 
 Promise.promisifyAll(Twitter.prototype)
 
-const internals = {}
-
 const MAX_USERS = 5000
 const MAX_KEYWORDS = 400
 
-internals.dependencies = [
-  'hapi-io',
-  'services/database',
-  'modules/topic',
-  'modules/contribution'
-]
+const internals = {}
 
-internals.init = function (server, options, next) {
+exports.validate = {
+  schema: {
+    auth: Joi.object({
+      consumer_key: Joi.string().required(),
+      consumer_secret: Joi.string().required(),
+      access_token: Joi.string().required(),
+      access_token_secret: Joi.string().required()
+    }).required()
+  },
+  message: 'Invalid Twitter configuration'
+}
+
+exports.register = function (server, options, next) {
   const IO = server.plugins['hapi-io'].io
   const Database = server.plugins['services/database']
   const Topics = server.plugins['modules/topic']
@@ -261,30 +267,14 @@ internals.transform = (tweet) => ({
   created_at: new Date(tweet.created_at)
 })
 
-exports.register = function (server, options, next) {
-  const schema = Joi.object({
-    auth: Joi.object({
-      consumer_key: Joi.string().required(),
-      consumer_secret: Joi.string().required(),
-      access_token: Joi.string().required(),
-      access_token_secret: Joi.string().required()
-    }).required()
-  })
-
-  try {
-    Joi.assert(options, schema, 'Invalid Twitter configuration')
-  } catch (err) {
-    return next(err)
-  }
-
-  server.dependency(internals.dependencies, (server, next) => {
-    internals.init(server, options, next)
-  })
-
-  next()
-}
-
 exports.register.attributes = {
   name: 'services/twitter',
-  dependencies: internals.dependencies
+  dependencies: [
+    'hapi-io',
+    'services/database',
+    'modules/topic',
+    'modules/contribution'
+  ]
 }
+
+module.exports = Deputy(exports)

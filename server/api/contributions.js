@@ -3,18 +3,10 @@
 // Module dependencies.
 const Joi = require('joi')
 const Boom = require('boom')
+const Deputy = require('hapi-deputy')
 const Promise = require('bluebird')
 
-const NotFoundError = Boom.notFound
-
-const internals = {}
-
-internals.dependencies = [
-  'services/database',
-  'modules/contribution'
-]
-
-internals.applyRoutes = (server, next) => {
+exports.register = function (server, options, next) {
   const Database = server.plugins['services/database']
   const Contributions = server.plugins['modules/contribution']
 
@@ -25,9 +17,7 @@ internals.applyRoutes = (server, next) => {
     let contributionId = request.params.contributionId
     let contribution = Contribution.forge({ id: contributionId })
       .fetch({ require: true })
-      .catch(Contribution.NotFoundError, () => {
-        throw new NotFoundError('Contribution not found')
-      })
+      .catch(Contribution.NotFoundError, () => Boom.notFound('Contribution not found'))
 
     reply(contribution)
   }
@@ -131,12 +121,12 @@ internals.applyRoutes = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-  next()
-}
-
 exports.register.attributes = {
   name: 'api/contributions',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/database',
+    'modules/contribution'
+  ]
 }
+
+module.exports = Deputy(exports)
