@@ -4,14 +4,14 @@
 const Joi = require('joi')
 const Knex = require('knex')
 const Bookshelf = require('bookshelf')
-const path = require('path')
-const fs = require('fs')
-const _ = require('lodash')
+const Path = require('path')
 
 exports.register = (server, options, next) => {
+  const log = server.log.bind(server, ['database'])
+
   let schema = Joi.object({
     knex: Joi.object().required(),
-    models: Joi.string().required(),
+    models: Joi.object().required(),
     baseModel: Joi.string().optional(),
     plugins: Joi.array().items(Joi.string()).default([])
   })
@@ -24,26 +24,33 @@ exports.register = (server, options, next) => {
   }
 
   // initialize bookshelf
+  log(`knex options: ${JSON.stringify(options.knex)}`)
   let bookshelf = Bookshelf(Knex(options.knex))
 
   // initialize plugins
-  options.plugins.forEach((plugin) => bookshelf.plugin(plugin))
+  let plugins = ['registry'].concat(options.plugins)
+  plugins.forEach((plugin) => {
+    log(`register plugin: ${plugin}`)
+    bookshelf.plugin(plugin)
+  })
 
   // load base model
-  let baseModel
+  let baseModel = bookshelf.Model.extend({})
   if (options.baseModel) {
-    baseModel = require(path.resolve(options.baseModel))(bookshelf)
-  } else {
-    baseModel = bookshelf.Model.extend({})
+    log(`load base model from ${options.baseModel}`)
+    baseModel = load(options.baseModel)(bookshelf)
   }
 
   // load models
-  let modelDir = path.resolve(options.models)
-  fs.readdirSync(modelDir).forEach(model => {
-    if (_.startsWith(model, '_')) return
-    let modelName = _.upperFirst(_.camelCase(model.replace(path.extname(model), '')))
-    bookshelf.model(modelName, require(path.join(modelDir, model))(baseModel, bookshelf))
+  Object.keys(options.models).forEach((model) => {
+    let file = options.models[model]
+    log(`register model ${model} from ${file}`)
+    bookshelf.model(model, load(file)(baseModel))
   })
+
+  function load (module) {
+    return require(Path.resolve(__dirname, module))
+  }
 
   server.on('stop', () => bookshelf.knex.destroy())
 

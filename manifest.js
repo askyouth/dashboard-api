@@ -85,9 +85,20 @@ const manifest = {
       register: './server/database',
       options: {
         knex: Config.getp('database.knex'),
-        models: './server/database/models',
-        baseModel: './server/database/models/_base',
-        plugins: ['pagination', 'registry', 'virtuals', 'visibility']
+        models: {
+          Camp: 'models/camp',
+          Contribution: 'models/contribution',
+          Handle: 'models/handle',
+          Infographic: 'models/infographic',
+          KloutScore: 'models/klout_score',
+          Session: 'models/session',
+          Settings: 'models/settings',
+          Topic: 'models/topic',
+          Tweet: 'models/tweet',
+          User: 'models/user'
+        },
+        baseModel: 'models/_base',
+        plugins: ['pagination', 'virtuals', 'visibility']
       }
     }
   }, {
