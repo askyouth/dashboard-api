@@ -75,7 +75,7 @@ const manifest = {
     plugin: 'hapi-auth-jwt2'
   }, {
     plugin: {
-      register: './server/services/database',
+      register: './services/database',
       options: {
         knex: Config.getp('database.knex'),
         models: {
@@ -96,70 +96,70 @@ const manifest = {
     }
   }, {
     plugin: {
-      register: './server/services/mail',
+      register: './services/mail',
       options: Config.getp('mail')
     }
   }, {
     plugin: {
-      register: './server/services/auth',
+      register: './services/auth',
       options: {
         secret: Config.get('auth.secret')
       }
     }
   }, {
     plugin: {
-      register: './server/services/file',
+      register: './services/file',
       options: Config.getp('files')
     }
   }, {
     plugin: {
-      register: './server/services/twitter',
+      register: './services/twitter',
       options: {
         auth: Config.getp('twitter.auth')
       }
     }
   }, {
     plugin: {
-      register: './server/services/klout',
+      register: './services/klout',
       options: {
         auth: Config.get('klout.auth'),
         interval: Config.get('klout.interval')
       }
     }
   }, {
-    plugin: './server/modules/settings'
+    plugin: './modules/settings'
   }, {
-    plugin: './server/modules/user'
+    plugin: './modules/user'
   }, {
-    plugin: './server/modules/tweet'
+    plugin: './modules/tweet'
   }, {
-    plugin: './server/modules/handle'
+    plugin: './modules/handle'
   }, {
-    plugin: './server/modules/topic'
+    plugin: './modules/topic'
   }, {
-    plugin: './server/modules/contribution'
+    plugin: './modules/contribution'
   }, {
-    plugin: './server/api/auth'
+    plugin: './api/auth'
   }, {
-    plugin: './server/api/account'
+    plugin: './api/account'
   }, {
-    plugin: './server/api/users'
+    plugin: './api/users'
   }, {
-    plugin: './server/api/handles'
+    plugin: './api/handles'
   }, {
-    plugin: './server/api/topics'
+    plugin: './api/topics'
   }, {
-    plugin: './server/api/tweets'
+    plugin: './api/tweets'
   }, {
-    plugin: './server/api/contributions'
+    plugin: './api/contributions'
   }, {
-    plugin: './server/api/infographics'
+    plugin: './api/infographics'
   }, {
-    plugin: './server/api/analytics'
+    plugin: './api/analytics'
   }, {
-    plugin: './server/api/search'
+    plugin: './api/search'
   }, {
-    plugin: './server/api/settings'
+    plugin: './api/settings'
   }]
 }
 

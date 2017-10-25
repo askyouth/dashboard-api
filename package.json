@@ -7,8 +7,8 @@
     "node": ">=8 <9"
   },
   "scripts": {
-    "start": "node -r dotenv/config server.js",
-    "dev": "node-dev -r dotenv/config server.js",
+    "start": "node -r dotenv/config index.js",
+    "dev": "node-dev -r dotenv/config index.js",
     "knex": "node -r dotenv/config ./node_modules/.bin/knex",
     "test": "NODE_ENV=test lab -v -c -t 90 -m 5000 -I '__core-js_shared__'"
   },
