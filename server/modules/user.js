@@ -6,11 +6,12 @@ const _ = require('lodash')
 const internals = {}
 
 internals.dependencies = [
-  'database'
+  'services/database'
 ]
 
 internals.init = (server, next) => {
-  const Database = server.plugins.database
+  const Database = server.plugins['services/database']
+
   const User = Database.model('User')
 
   function prepareQuery (query) {
@@ -60,6 +61,6 @@ exports.register = function (server, options, next) {
 }
 
 exports.register.attributes = {
-  name: 'services/user',
+  name: 'modules/user',
   dependencies: internals.dependencies
 }

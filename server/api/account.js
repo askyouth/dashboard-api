@@ -3,25 +3,24 @@
 // Module dependencies.
 const Joi = require('joi')
 const Boom = require('boom')
-const Errors = require('../errors')
 const Promise = require('bluebird')
 const _ = require('lodash')
-
-const AuthenticationError = Errors.AuthenticationError
 
 const internals = {}
 
 internals.dependencies = [
-  'database',
-  'auth',
-  'services/handle'
+  'services/auth',
+  'services/database',
+  'modules/handle',
+  'modules/contribution'
 ]
 
 internals.applyRoutes = (server, next) => {
-  const Auth = server.plugins.auth
-  const Handle = server.plugins['services/handle']
-  const Contribution = server.plugins['services/contribution']
-  const Database = server.plugins.database
+  const Auth = server.plugins['services/auth']
+  const Database = server.plugins['services/database']
+  const Handles = server.plugins['modules/handle']
+  const Contributions = server.plugins['modules/contribution']
+
   const User = Database.model('User')
   const Camp = Database.model('Camp')
 
@@ -33,10 +32,10 @@ internals.applyRoutes = (server, next) => {
     },
     handler (request, reply) {
       let data = Promise.props({
-        handle: Handle.fetch({ camp: Camp.BROKER }),
-        youthHandles: Handle.count({ camp: Camp.YOUTH }),
-        policyMakerHandles: Handle.count({ camp: Camp.POLICY_MAKER }),
-        contributions: Contribution.count()
+        handle: Handles.fetch({ camp: Camp.BROKER }),
+        youthHandles: Handles.count({ camp: Camp.YOUTH }),
+        policyMakerHandles: Handles.count({ camp: Camp.POLICY_MAKER }),
+        contributions: Contributions.count()
       })
 
       reply(data)
@@ -73,7 +72,7 @@ internals.applyRoutes = (server, next) => {
           let currentPassword = request.payload.currentPassword
 
           let promise = Auth.authenticate(user, currentPassword)
-            .catch(AuthenticationError, () => Boom.badRequest('Invalid password'))
+            .catch(Auth.AuthenticationError, () => Boom.badRequest('Invalid password'))
 
           reply(promise)
         }

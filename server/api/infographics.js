@@ -6,12 +6,16 @@ const Boom = require('boom')
 
 const internals = {}
 
-internals.dependencies = ['database', 'services/file']
+internals.dependencies = [
+  'services/file',
+  'services/database'
+]
 
 internals.applyRoutes = (server, next) => {
-  const Database = server.plugins.database
-  const Infographic = Database.model('Infographic')
   const File = server.plugins['services/file']
+  const Database = server.plugins['services/database']
+
+  const Infographic = Database.model('Infographic')
 
   function loadInfographic (request, reply) {
     let infographicId = request.params.infographicId

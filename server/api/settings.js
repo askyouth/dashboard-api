@@ -7,13 +7,14 @@ const Promise = require('bluebird')
 const internals = {}
 
 internals.dependencies = [
-  'settings',
-  'services/twitter'
+  'services/twitter',
+  'modules/settings'
 ]
 
 internals.applyRoutes = (server, next) => {
-  const Settings = server.plugins.settings
-  const TwitterService = server.plugins['services/twitter']
+  const Twitter = server.plugins['services/twitter']
+  const Settings = server.plugins['modules/settings']
+
   const c = cache({ keeptime: '60s' })
 
   server.route({
@@ -42,7 +43,7 @@ internals.applyRoutes = (server, next) => {
         lists: Promise.resolve(c.fetch('lists'))
           .then((lists) => {
             if (lists) return lists
-            return TwitterService.listOwnerships().then((lists) => {
+            return Twitter.listOwnerships().then((lists) => {
               lists = lists.map((list) => ({
                 id: list.id_str,
                 name: list.name,

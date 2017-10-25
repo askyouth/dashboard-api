@@ -12,17 +12,18 @@ const BadRequestError = Boom.badRequest
 const internals = {}
 
 internals.dependencies = [
-  'auth',
-  'database',
-  'services/user',
-  'services/mail'
+  'services/auth',
+  'services/mail',
+  'services/database',
+  'modules/user'
 ]
 
 internals.applyRoutes = (server, next) => {
-  const UserService = server.plugins['services/user']
-  const MailService = server.plugins['services/mail']
-  const AuthService = server.plugins.auth
-  const Database = server.plugins.database
+  const Mail = server.plugins['services/mail']
+  const Auth = server.plugins['services/auth']
+  const Database = server.plugins['services/database']
+  const Users = server.plugins['modules/user']
+
   const User = Database.model('User')
 
   function loadUser (request, reply) {
@@ -61,13 +62,13 @@ internals.applyRoutes = (server, next) => {
       let sortOrder = request.query.sortOrder
 
       let result = Promise.props({
-        users: UserService.fetch(filter, {
+        users: Users.fetch(filter, {
           sortBy: sort,
           sortOrder: sortOrder,
           page: page,
           pageSize: pageSize
         }),
-        count: UserService.count(filter)
+        count: Users.count(filter)
       })
 
       reply(result)
@@ -100,7 +101,7 @@ internals.applyRoutes = (server, next) => {
       }, {
         assign: 'passwordHash',
         method (request, reply) {
-          let password = AuthService.generateTokenHash()
+          let password = Auth.generateTokenHash()
             .then((token) => token.hash)
 
           reply(password)
@@ -123,7 +124,7 @@ internals.applyRoutes = (server, next) => {
       }, {
         assign: 'tokenHash',
         method (request, reply) {
-          let resetToken = AuthService.generateTokenHash()
+          let resetToken = Auth.generateTokenHash()
           reply(resetToken)
         }
       }]
@@ -146,7 +147,7 @@ internals.applyRoutes = (server, next) => {
             token: tokenHash.token,
             url: Config.get('connection.front.uri')
           }
-          return MailService.sendEmail(emailOptions, template, context)
+          return Mail.sendEmail(emailOptions, template, context)
         })
 
       reply(promise)

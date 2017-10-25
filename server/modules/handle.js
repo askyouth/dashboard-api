@@ -8,20 +8,21 @@ const _ = require('lodash')
 const internals = {}
 
 internals.dependencies = [
-  'database',
-  'settings',
   'services/klout',
-  'services/twitter'
+  'services/twitter',
+  'services/database',
+  'modules/settings'
 ]
 
 internals.init = (server, next) => {
-  const log = server.log.bind(server, ['services', 'handle'])
   const Klout = server.plugins['services/klout']
   const Twitter = server.plugins['services/twitter']
-  const Settings = server.plugins.settings
-  const Database = server.plugins.database
+  const Database = server.plugins['services/database']
+  const Settings = server.plugins['modules/settings']
+
   const Handle = Database.model('Handle')
   const Camp = Database.model('Camp')
+  const log = server.log.bind(server, ['services', 'handle'])
 
   const campSettingsMap = {
     [Camp.YOUTH]: 'twitter.list.youth',
@@ -173,6 +174,6 @@ exports.register = function (server, options, next) {
 }
 
 exports.register.attributes = {
-  name: 'services/handle',
+  name: 'modules/handle',
   dependencies: internals.dependencies
 }

@@ -36,8 +36,6 @@ const manifest = {
     }
   }],
   registrations: [{
-    plugin: 'hapi-io'
-  }, {
     plugin: {
       register: 'good',
       options: {
@@ -72,17 +70,12 @@ const manifest = {
   }, {
     plugin: 'tv'
   }, {
+    plugin: 'hapi-io'
+  }, {
     plugin: 'hapi-auth-jwt2'
   }, {
     plugin: {
-      register: './server/auth',
-      options: {
-        secret: Config.get('auth.secret')
-      }
-    }
-  }, {
-    plugin: {
-      register: './server/database',
+      register: './server/services/database',
       options: {
         knex: Config.getp('database.knex'),
         models: {
@@ -102,7 +95,49 @@ const manifest = {
       }
     }
   }, {
-    plugin: './server/settings'
+    plugin: {
+      register: './server/services/mail',
+      options: Config.getp('mail')
+    }
+  }, {
+    plugin: {
+      register: './server/services/auth',
+      options: {
+        secret: Config.get('auth.secret')
+      }
+    }
+  }, {
+    plugin: {
+      register: './server/services/file',
+      options: Config.getp('files')
+    }
+  }, {
+    plugin: {
+      register: './server/services/twitter',
+      options: {
+        auth: Config.getp('twitter.auth')
+      }
+    }
+  }, {
+    plugin: {
+      register: './server/services/klout',
+      options: {
+        auth: Config.get('klout.auth'),
+        interval: Config.get('klout.interval')
+      }
+    }
+  }, {
+    plugin: './server/modules/settings'
+  }, {
+    plugin: './server/modules/user'
+  }, {
+    plugin: './server/modules/tweet'
+  }, {
+    plugin: './server/modules/handle'
+  }, {
+    plugin: './server/modules/topic'
+  }, {
+    plugin: './server/modules/contribution'
   }, {
     plugin: './server/api/auth'
   }, {
@@ -125,41 +160,6 @@ const manifest = {
     plugin: './server/api/search'
   }, {
     plugin: './server/api/settings'
-  }, {
-    plugin: './server/services/user'
-  }, {
-    plugin: './server/services/tweet'
-  }, {
-    plugin: './server/services/handle'
-  }, {
-    plugin: './server/services/topic'
-  }, {
-    plugin: './server/services/contribution'
-  }, {
-    plugin: {
-      register: './server/services/mail',
-      options: Config.getp('mail')
-    }
-  }, {
-    plugin: {
-      register: './server/services/twitter',
-      options: {
-        auth: Config.getp('twitter.auth')
-      }
-    }
-  }, {
-    plugin: {
-      register: './server/services/klout',
-      options: {
-        auth: Config.get('klout.auth'),
-        interval: Config.get('klout.interval')
-      }
-    }
-  }, {
-    plugin: {
-      register: './server/services/file',
-      options: Config.getp('files')
-    }
   }]
 }
 

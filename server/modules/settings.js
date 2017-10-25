@@ -5,11 +5,12 @@
 const internals = {}
 
 internals.dependencies = [
-  'database'
+  'services/database'
 ]
 
 internals.init = (server, next) => {
-  const Database = server.plugins.database
+  const Database = server.plugins['services/database']
+
   const Settings = Database.model('Settings')
 
   function get (keys) {
@@ -89,6 +90,6 @@ exports.register = function (server, options, next) {
 }
 
 exports.register.attributes = {
-  name: 'settings',
+  name: 'modules/settings',
   dependencies: internals.dependencies
 }

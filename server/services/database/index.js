@@ -7,7 +7,7 @@ const Bookshelf = require('bookshelf')
 const Path = require('path')
 
 exports.register = (server, options, next) => {
-  const log = server.log.bind(server, ['database'])
+  const log = server.log.bind(server, ['services', 'database'])
 
   let schema = Joi.object({
     knex: Joi.object().required(),
@@ -61,5 +61,5 @@ exports.register = (server, options, next) => {
 }
 
 exports.register.attributes = {
-  name: 'database'
+  name: 'services/database'
 }

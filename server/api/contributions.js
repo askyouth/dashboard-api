@@ -10,15 +10,16 @@ const NotFoundError = Boom.notFound
 const internals = {}
 
 internals.dependencies = [
-  'database',
-  'services/contribution'
+  'services/database',
+  'modules/contribution'
 ]
 
 internals.applyRoutes = (server, next) => {
-  const Database = server.plugins.database
+  const Database = server.plugins['services/database']
+  const Contributions = server.plugins['modules/contribution']
+
   const Camp = Database.model('Camp')
   const Contribution = Database.model('Contribution')
-  const ContributionService = server.plugins['services/contribution']
 
   function loadContribution (request, reply) {
     let contributionId = request.params.contributionId
@@ -64,14 +65,14 @@ internals.applyRoutes = (server, next) => {
       let related = ['tweet']
 
       let result = Promise.props({
-        contributions: ContributionService.fetch(filter, {
+        contributions: Contributions.fetch(filter, {
           sortBy: sort,
           sortOrder: sortOrder,
           page: page,
           pageSize: pageSize,
           withRelated: related
         }),
-        count: ContributionService.count(filter)
+        count: Contributions.count(filter)
       })
 
       reply(result)

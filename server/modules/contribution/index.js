@@ -7,13 +7,17 @@ const _ = require('lodash')
 
 const internals = {}
 
-internals.dependencies = ['database']
+internals.dependencies = [
+  'services/database'
+]
 
 exports.register = function (server, options, next) {
-  const Database = server.plugins.database
+  const Database = server.plugins['services/database']
+
   const Camp = Database.model('Camp')
   const Handle = Database.model('Handle')
   const Contribution = Database.model('Contribution')
+
   const engine = new Evaluator()
 
   // check if tweet is candidate for contribution:
@@ -225,6 +229,6 @@ exports.register = function (server, options, next) {
 }
 
 exports.register.attributes = {
-  name: 'services/contribution',
+  name: 'modules/contribution',
   dependencies: internals.dependencies
 }

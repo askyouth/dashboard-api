@@ -7,15 +7,15 @@ const Promise = require('bluebird')
 const internals = {}
 
 internals.dependencies = [
-  'services/tweet',
-  'services/topic',
-  'services/handle'
+  'modules/tweet',
+  'modules/topic',
+  'modules/handle'
 ]
 
 internals.applyRoutes = (server, next) => {
-  const Tweet = server.plugins['services/tweet']
-  const Topic = server.plugins['services/topic']
-  const Handle = server.plugins['services/handle']
+  const Tweets = server.plugins['modules/tweet']
+  const Topics = server.plugins['modules/topic']
+  const Handles = server.plugins['modules/handle']
 
   server.route({
     method: 'GET',
@@ -32,9 +32,9 @@ internals.applyRoutes = (server, next) => {
       let q = request.query.q
 
       let result = Promise.props({
-        tweets: Tweet.fetch({ search: q }, { limit: 5 }),
-        topics: Topic.fetch({ search: q }, { pageSize: 5 }),
-        handles: Handle.fetch({ search: q }, { pageSize: 5 })
+        tweets: Tweets.fetch({ search: q }, { limit: 5 }),
+        topics: Topics.fetch({ search: q }, { pageSize: 5 }),
+        handles: Handles.fetch({ search: q }, { pageSize: 5 })
       })
 
       reply(result)

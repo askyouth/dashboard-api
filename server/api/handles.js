@@ -11,19 +11,20 @@ const BadRequestError = Boom.badRequest
 const internals = {}
 
 internals.dependencies = [
-  'database',
-  'services/handle',
-  'services/topic',
-  'services/twitter'
+  'services/twitter',
+  'services/database',
+  'modules/topic',
+  'modules/handle'
 ]
 
 internals.applyRoutes = (server, next) => {
-  const TwitterService = server.plugins['services/twitter']
-  const HandleService = server.plugins['services/handle']
-  const TopicService = server.plugins['services/topic']
-  const Database = server.plugins.database
-  const Handle = Database.model('Handle')
+  const Twitter = server.plugins['services/twitter']
+  const Database = server.plugins['services/database']
+  const Topics = server.plugins['modules/topic']
+  const Handles = server.plugins['modules/handle']
+
   const Topic = Database.model('Topic')
+  const Handle = Database.model('Handle')
 
   function loadHandle (request, reply) {
     let handleId = request.params.handleId
@@ -76,14 +77,14 @@ internals.applyRoutes = (server, next) => {
       let related = ['camp'].concat(request.query.related)
 
       let result = Promise.props({
-        handles: HandleService.fetch(filter, {
+        handles: Handles.fetch(filter, {
           sortBy: sort,
           sortOrder: sortOrder,
           page: page,
           pageSize: pageSize,
           withRelated: related
         }),
-        count: HandleService.count(filter)
+        count: Handles.count(filter)
       })
 
       reply(result)
@@ -127,13 +128,13 @@ internals.applyRoutes = (server, next) => {
         screen_name: username,
         include_entities: false
       }
-      let handle = TwitterService.getUserProfile(opts)
-        .then((profile) => HandleService.createFromTwitterProfile(profile, campId))
+      let handle = Twitter.getUserProfile(opts)
+        .then((profile) => Handles.createFromTwitterProfile(profile, campId))
         .then((handle) => handle.refresh({ withRelated: ['camp'] }))
-        .tap((handle) => HandleService.addToTwitterList(handle))
-        .tap((handle) => TwitterService.follow(handle.get('id')))
+        .tap((handle) => Handles.addToTwitterList(handle))
+        .tap((handle) => Twitter.follow(handle.get('id')))
         .tap((handle) => {
-          if (follow) return TwitterService.friendshipCreate(handle.get('id'))
+          if (follow) return Twitter.friendshipCreate(handle.get('id'))
         })
 
       reply(handle)
@@ -216,10 +217,10 @@ internals.applyRoutes = (server, next) => {
       let handle = request.pre.handle
 
       let handleId = handle.get('id')
-      let promise = HandleService.removeFromTwitterList(handle)
+      let promise = Handles.removeFromTwitterList(handle)
         .then(() => handle.destroy())
-        .tap(() => TwitterService.unfollow(handleId))
-        .tap(() => TwitterService.friendshipDestroy(handleId))
+        .tap(() => Twitter.unfollow(handleId))
+        .tap(() => Twitter.friendshipDestroy(handleId))
 
       reply(promise).code(204)
     }
@@ -236,7 +237,7 @@ internals.applyRoutes = (server, next) => {
     },
     handler (request, reply) {
       let handle = request.pre.handle
-      let promise = TwitterService.friendshipCreate(handle.get('id')).return(handle)
+      let promise = Twitter.friendshipCreate(handle.get('id')).return(handle)
 
       reply(promise)
     }
@@ -253,7 +254,7 @@ internals.applyRoutes = (server, next) => {
     },
     handler (request, reply) {
       let handle = request.pre.handle
-      let promise = TwitterService.friendshipDestroy(handle.get('id')).return(handle)
+      let promise = Twitter.friendshipDestroy(handle.get('id')).return(handle)
 
       reply(promise)
     }
@@ -295,14 +296,14 @@ internals.applyRoutes = (server, next) => {
       }, request.query.filter)
 
       let result = Promise.props({
-        topics: TopicService.fetch(filter, {
+        topics: Topics.fetch(filter, {
           sortBy: sort,
           sortOrder: sortOrder,
           page: page,
           pageSize: pageSize,
           withRelated: related
         }),
-        count: TopicService.count(filter)
+        count: Topics.count(filter)
       })
 
       reply(result)

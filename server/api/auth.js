@@ -4,26 +4,23 @@
 const Joi = require('joi')
 const Boom = require('boom')
 const Config = require('config')
-const Errors = require('../errors')
-
-const AuthenticationError = Errors.AuthenticationError
-const PasswordRecoveryError = Errors.PasswordRecoveryError
 
 const internals = {}
 
 internals.dependencies = [
-  'auth',
-  'database',
-  'settings',
-  'services/mail'
+  'services/auth',
+  'services/mail',
+  'services/database',
+  'modules/settings'
 ]
 
 internals.applyRoutes = (server, next) => {
-  const Auth = server.plugins.auth
-  const Settings = server.plugins.settings
-  const Database = server.plugins.database
-  const User = Database.model('User')
+  const Auth = server.plugins['services/auth']
   const Mail = server.plugins['services/mail']
+  const Database = server.plugins['services/database']
+  const Settings = server.plugins['modules/settings']
+
+  const User = Database.model('User')
 
   server.route({
     method: 'POST',
@@ -148,7 +145,7 @@ internals.applyRoutes = (server, next) => {
 
           let promise = Auth.authenticate(user, password)
             .then(() => user.save({ last_login_at: new Date() }))
-            .catch(AuthenticationError, () => Boom.unauthorized())
+            .catch(Auth.AuthenticationError, () => Boom.unauthorized())
 
           reply(promise)
         }
@@ -292,7 +289,7 @@ internals.applyRoutes = (server, next) => {
           let token = request.payload.token
 
           let promise = Auth.validateTokenHash(user, token)
-            .catch(PasswordRecoveryError, () => Boom.badRequest('Invalid token.'))
+            .catch(Auth.PasswordRecoveryError, () => Boom.badRequest('Invalid token.'))
 
           reply(promise)
         }

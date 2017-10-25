@@ -7,17 +7,18 @@ const Promise = require('bluebird')
 const internals = {}
 
 internals.dependencies = [
-  'database',
-  'services/topic',
-  'services/handle',
-  'services/twitter'
+  'services/twitter',
+  'services/database',
+  'modules/topic',
+  'modules/handle'
 ]
 
 internals.applyRoutes = function (server, next) {
   const Twitter = server.plugins['services/twitter']
-  const TopicService = server.plugins['services/topic']
-  const HandleService = server.plugins['services/handle']
-  const Database = server.plugins.database
+  const Database = server.plugins['services/database']
+  const Topics = server.plugins['modules/topic']
+  const Handles = server.plugins['modules/handle']
+
   const Topic = Database.model('Topic')
 
   server.route({
@@ -46,7 +47,7 @@ internals.applyRoutes = function (server, next) {
       let sortOrder = request.query.sortOrder
       let related = request.query.related
 
-      let topics = TopicService.fetch(filter, {
+      let topics = Topics.fetch(filter, {
         sortBy: sort,
         sortOrder: sortOrder,
         page: page,
@@ -229,14 +230,14 @@ internals.applyRoutes = function (server, next) {
       }, request.query.filter)
 
       let result = Promise.props({
-        handles: HandleService.fetch(filter, {
+        handles: Handles.fetch(filter, {
           sortBy: sort,
           sortOrder: sortOrder,
           page: page,
           pageSize: pageSize,
           withRelated: related
         }),
-        count: HandleService.count(filter)
+        count: Handles.count(filter)
       })
 
       reply(result)

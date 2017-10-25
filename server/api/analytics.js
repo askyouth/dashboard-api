@@ -5,12 +5,15 @@ const Joi = require('joi')
 
 const internals = {}
 
-internals.dependencies = ['database']
+internals.dependencies = [
+  'services/database'
+]
 
 internals.applyRoutes = (server, next) => {
-  const Database = server.plugins.database
-  const Camp = Database.model('Camp')
+  const Database = server.plugins['services/database']
+
   const knex = Database.knex
+  const Camp = Database.model('Camp')
 
   server.route({
     method: 'GET',

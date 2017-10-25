@@ -6,16 +6,20 @@ const JWT = require('jsonwebtoken')
 const Uuid = require('node-uuid')
 const Errors = require('./errors')
 const Bcrypt = require('bcrypt')
+const Promise = require('bluebird')
 
 const AuthenticationError = Errors.AuthenticationError
 const PasswordRecoveryError = Errors.PasswordRecoveryError
 
 const internals = {}
 
-internals.dependencies = ['database']
+internals.dependencies = [
+  'services/database'
+]
 
 internals.applyStrategy = (server, options, next) => {
-  const Database = server.plugins.database
+  const Database = server.plugins['services/database']
+
   const Session = Database.model('Session')
 
   server.auth.strategy('jwt', 'jwt', {
@@ -41,14 +45,14 @@ internals.applyStrategy = (server, options, next) => {
   }
 
   function generatePasswordHash (password) {
-    return Bcrypt.hash(password, 10)
+    return Promise.resolve(Bcrypt.hash(password, 10))
   }
 
   function authenticate (user, password) {
     let passwordHash = user.get('password')
-    return Bcrypt.compare(password, passwordHash).then((res) => {
+    return Promise.resolve(Bcrypt.compare(password, passwordHash).then((res) => {
       if (!res) throw new AuthenticationError()
-    })
+    }))
   }
 
   function createSession (user) {
@@ -77,16 +81,16 @@ internals.applyStrategy = (server, options, next) => {
   function generateTokenHash () {
     let token = Uuid.v4()
 
-    return Bcrypt.hash(token, 10).then((hash) => ({
+    return Promise.resolve(Bcrypt.hash(token, 10).then((hash) => ({
       token: token,
       hash: hash
-    }))
+    })))
   }
 
   function validateTokenHash (user, token) {
-    return Bcrypt.compare(token, user.get('password_reset')).then((res) => {
+    return Promise.resolve(Bcrypt.compare(token, user.get('password_reset')).then((res) => {
       if (!res) throw new PasswordRecoveryError()
-    })
+    }))
   }
 
   server.expose('authenticate', authenticate)
@@ -96,6 +100,9 @@ internals.applyStrategy = (server, options, next) => {
   server.expose('generateTokenHash', generateTokenHash)
   server.expose('validateTokenHash', validateTokenHash)
   server.expose('generatePasswordHash', generatePasswordHash)
+
+  server.expose('AuthenticationError', AuthenticationError)
+  server.expose('PasswordRecoveryError', PasswordRecoveryError)
 
   next()
 }
@@ -118,6 +125,6 @@ exports.register = function (server, options, next) {
 }
 
 exports.register.attributes = {
-  name: 'auth',
+  name: 'services/auth',
   dependencies: internals.dependencies
 }

@@ -4,6 +4,7 @@
 const Fs = require('fs')
 const Joi = require('joi')
 const Boom = require('boom')
+
 const NotFoundError = Boom.notFound
 const BadRequestError = Boom.badRequest
 
@@ -11,19 +12,20 @@ const internals = {}
 
 internals.dependencies = [
   'hapi-io',
-  'database',
-  'services/tweet',
+  'services/file',
   'services/twitter',
-  'services/file'
+  'services/database',
+  'modules/tweet'
 ]
 
 internals.applyRoutes = (server, next) => {
-  const Database = server.plugins.database
+  const File = server.plugins['services/file']
+  const Twitter = server.plugins['services/twitter']
+  const Database = server.plugins['services/database']
+  const Tweets = server.plugins['modules/tweet']
+
   const Tweet = Database.model('Tweet')
   const Infographic = Database.model('Infographic')
-  const File = server.plugins['services/file']
-  const Tweets = server.plugins['services/tweet']
-  const Twitter = server.plugins['services/twitter']
 
   function loadTweet (request, reply) {
     let tweetId = request.params.id
@@ -77,7 +79,7 @@ internals.applyRoutes = (server, next) => {
       let socket = request.plugins['hapi-io'].socket
       if (socket) {
         socket.leaveAll()
-        if (userId) socket.join(`user:${userId}`)
+        if (userId) socket.join(`handle:${userId}`)
         else if (topicId) socket.join(`topic:${topicId}`)
         else socket.join('timeline')
       }

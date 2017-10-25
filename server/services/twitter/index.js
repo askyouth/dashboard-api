@@ -15,16 +15,22 @@ const internals = {}
 const MAX_USERS = 5000
 const MAX_KEYWORDS = 400
 
-internals.dependencies = ['hapi-io', 'database', 'services/topic', 'services/contribution']
+internals.dependencies = [
+  'hapi-io',
+  'services/database',
+  'modules/topic',
+  'modules/contribution'
+]
 
 internals.init = function (server, options, next) {
-  const Database = server.plugins.database
+  const IO = server.plugins['hapi-io'].io
+  const Database = server.plugins['services/database']
+  const Topics = server.plugins['modules/topic']
+  const Contributions = server.plugins['modules/contribution']
+
   const Tweet = Database.model('Tweet')
   const Topic = Database.model('Topic')
   const Handle = Database.model('Handle')
-  const IO = server.plugins['hapi-io'].io
-  const TopicService = server.plugins['services/topic']
-  const ContributionService = server.plugins['services/contribution']
   const log = server.log.bind(server, ['services', 'twitter'])
 
   const twitter = new Twitter({
@@ -58,8 +64,8 @@ internals.init = function (server, options, next) {
     storeTweet(internals.transform(tweet))
       .then((tweet) => [
         tweet,
-        TopicService.process(tweet),
-        ContributionService.process(tweet)
+        Topics.process(tweet),
+        Contributions.process(tweet)
       ])
       .spread(broadcast)
       .catch((err) => log(`error: ${err.message}`))
@@ -161,9 +167,6 @@ internals.init = function (server, options, next) {
     return twitter.postAsync('lists/members/destroy', {
       list_id: id,
       user_id: userId
-    }).catch((err) => {
-      console.log(err)
-      throw err
     })
   }
 

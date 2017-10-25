@@ -5,10 +5,13 @@ const _ = require('lodash')
 
 const internals = {}
 
-internals.dependencies = ['database']
+internals.dependencies = [
+  'services/database'
+]
 
 internals.init = (server, next) => {
-  const Database = server.plugins.database
+  const Database = server.plugins['services/database']
+
   const Tweet = Database.model('Tweet')
 
   function fetch (query, opts) {
@@ -52,6 +55,6 @@ exports.register = function (server, options, next) {
 }
 
 exports.register.attributes = {
-  name: 'services/tweet',
+  name: 'modules/tweet',
   dependencies: internals.dependencies
 }

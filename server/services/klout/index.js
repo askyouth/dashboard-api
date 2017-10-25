@@ -10,13 +10,15 @@ Promise.promisifyAll(Klout.prototype)
 
 const internals = {}
 
-internals.dependencies = ['database']
+internals.dependencies = [
+  'services/database'
+]
 
 internals.init = function (server, options, next) {
-  const Database = server.plugins.database
+  const Database = server.plugins['services/database']
+
   const Handle = Database.model('Handle')
   const KloutScore = Database.model('KloutScore')
-  const knex = Database.knex
   const log = server.log.bind(server, ['services', 'klout'])
 
   const klout = new Klout(options.auth)
@@ -40,7 +42,7 @@ internals.init = function (server, options, next) {
 
     return Handle
       .query((qb) => {
-        qb.select(['handle.*', knex.raw('max(klout_score.created_at) as last_check')])
+        qb.select(['handle.*', Database.knex.raw('max(klout_score.created_at) as last_check')])
           .leftJoin('klout_score', 'handle.id', 'klout_score.handle_id')
           .whereNotNull('handle.klout_id')
           .groupBy('handle.id')
