@@ -18,9 +18,9 @@ exports.register = function (server, options, next) {
 
   server.route({
     method: 'GET',
-    path: '/account',
+    path: '/profile',
     config: {
-      description: 'Get account information and system stats'
+      description: 'Get profile information and system stats',
     },
     handler (request, reply) {
       let data = Promise.props({
