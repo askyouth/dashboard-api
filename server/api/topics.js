@@ -6,8 +6,8 @@ const Deputy = require('hapi-deputy')
 const Promise = require('bluebird')
 
 exports.register = function (server, options, next) {
-  const Twitter = server.plugins['services/twitter']
   const Database = server.plugins['services/database']
+  const TwitterStream = server.plugins['services/twitter/stream']
   const Topics = server.plugins['modules/topic']
   const Handles = server.plugins['modules/handle']
 
@@ -69,7 +69,7 @@ exports.register = function (server, options, next) {
 
       let topic = Topic.forge(payload).save().tap((topic) => {
         if (topic.get('keywords').length) {
-          Twitter.track(topic.get('keywords'))
+          TwitterStream.track(topic.get('keywords'))
         }
       })
 
@@ -145,10 +145,10 @@ exports.register = function (server, options, next) {
       topic = topic.save().tap((topic) => {
         if (hasChangedKeywords) {
           if (previousKeywords.length) {
-            Twitter.untrack(previousKeywords)
+            TwitterStream.untrack(previousKeywords)
           }
           if (topic.get('keywords').length) {
-            Twitter.track(topic.get('keywords'))
+            TwitterStream.track(topic.get('keywords'))
           }
         }
       })
@@ -177,7 +177,7 @@ exports.register = function (server, options, next) {
       let keywords = topic.get('keywords')
       let promise = topic.destroy().then(() => {
         if (keywords.length) {
-          Twitter.untrack(keywords)
+          TwitterStream.untrack(keywords)
         }
       })
 
@@ -242,8 +242,8 @@ exports.register = function (server, options, next) {
 exports.register.attributes = {
   name: 'api/topics',
   dependencies: [
-    'services/twitter',
     'services/database',
+    'services/twitter/stream',
     'modules/topic',
     'modules/handle'
   ]

@@ -7,8 +7,9 @@ const Deputy = require('hapi-deputy')
 const Promise = require('bluebird')
 
 exports.register = function (server, options, next) {
-  const Twitter = server.plugins['services/twitter']
   const Database = server.plugins['services/database']
+  const Twitter = server.plugins['services/twitter']
+  const TwitterStream = server.plugins['services/twitter/stream']
   const Topics = server.plugins['modules/topic']
   const Handles = server.plugins['modules/handle']
 
@@ -115,7 +116,7 @@ exports.register = function (server, options, next) {
         .then((profile) => Handles.createFromTwitterProfile(profile, campId))
         .then((handle) => handle.refresh({ withRelated: ['camp'] }))
         .tap((handle) => Handles.addToTwitterList(handle))
-        .tap((handle) => Twitter.follow(handle.get('id')))
+        .tap((handle) => TwitterStream.follow(handle.get('id')))
         .tap((handle) => {
           if (follow) return Twitter.friendshipCreate(handle.get('id'))
         })
@@ -202,7 +203,7 @@ exports.register = function (server, options, next) {
       let handleId = handle.get('id')
       let promise = Handles.removeFromTwitterList(handle)
         .then(() => handle.destroy())
-        .tap(() => Twitter.unfollow(handleId))
+        .tap(() => TwitterStream.unfollow(handleId))
         .tap(() => Twitter.friendshipDestroy(handleId))
 
       reply(promise).code(204)
@@ -361,8 +362,9 @@ exports.register = function (server, options, next) {
 exports.register.attributes = {
   name: 'api/handles',
   dependencies: [
-    'services/twitter',
     'services/database',
+    'services/twitter',
+    'services/twitter/stream',
     'modules/topic',
     'modules/handle'
   ]

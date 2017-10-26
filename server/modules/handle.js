@@ -9,6 +9,7 @@ const _ = require('lodash')
 exports.register = function (server, options, next) {
   const Klout = server.plugins['services/klout']
   const Twitter = server.plugins['services/twitter']
+  const TwitterStream = server.plugins['services/twitter/stream']
   const Database = server.plugins['services/database']
   const Settings = server.plugins['modules/settings']
 
@@ -31,7 +32,7 @@ exports.register = function (server, options, next) {
       .catch(Handle.NotFoundError, () => {
         return Twitter.verifyCredentials()
           .then((profile) => createFromTwitterProfile(profile, Camp.BROKER))
-          .tap((handle) => Twitter.follow(handle.get('id')))
+          .tap((handle) => TwitterStream.follow(handle.get('id')))
       })
       .catch((err) => log(`error fetching broker: ${err.message}`))
   }
@@ -165,6 +166,7 @@ exports.register.attributes = {
   dependencies: [
     'services/klout',
     'services/twitter',
+    'services/twitter/stream',
     'services/database',
     'modules/settings'
   ]

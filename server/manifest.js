@@ -113,6 +113,14 @@ const manifest = {
     }
   }, {
     plugin: {
+      register: './services/klout',
+      options: {
+        auth: Config.get('klout.auth'),
+        interval: Config.get('klout.interval')
+      }
+    }
+  }, {
+    plugin: {
       register: './services/twitter',
       options: {
         auth: Config.getp('twitter.auth')
@@ -120,10 +128,9 @@ const manifest = {
     }
   }, {
     plugin: {
-      register: './services/klout',
+      register: './services/twitter/stream',
       options: {
-        auth: Config.get('klout.auth'),
-        interval: Config.get('klout.interval')
+        auth: Config.getp('twitter.auth')
       }
     }
   }, {
