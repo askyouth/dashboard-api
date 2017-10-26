@@ -27,6 +27,7 @@ exports.register = function (server, options, next) {
     path: '/contributions',
     config: {
       description: 'Get list of contributions',
+      tags: ['api', 'contributions'],
       validate: {
         query: {
           filter: Joi.object({
@@ -74,6 +75,7 @@ exports.register = function (server, options, next) {
     path: '/contributions/{contributionId}',
     config: {
       description: 'Get contribution',
+      tags: ['api', 'contributions'],
       validate: {
         params: {
           contributionId: Joi.number().integer().required()
@@ -98,6 +100,7 @@ exports.register = function (server, options, next) {
     path: '/contributions/{contributionId}',
     config: {
       description: 'Update contribution',
+      tags: ['api', 'contributions'],
       validate: {
         payload: {
           topic_id: Joi.number().integer().allow(null)

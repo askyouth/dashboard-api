@@ -16,6 +16,7 @@ exports.register = function (server, options, next) {
     path: '/config',
     config: {
       description: 'Get public settings',
+      tags: ['api', 'settings'],
       auth: false
     },
     handler (request, reply) {
@@ -28,7 +29,8 @@ exports.register = function (server, options, next) {
     method: 'GET',
     path: '/settings',
     config: {
-      description: 'Fetch settings'
+      description: 'Fetch settings',
+      tags: ['api', 'settings']
     },
     handler (request, reply) {
       let settings = Promise.props({
@@ -63,7 +65,8 @@ exports.register = function (server, options, next) {
     method: 'POST',
     path: '/settings',
     config: {
-      description: 'Update settings'
+      description: 'Update settings',
+      tags: ['api', 'settings']
     },
     handler (request, reply) {
       let settings = request.payload

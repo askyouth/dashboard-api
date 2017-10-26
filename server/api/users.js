@@ -29,6 +29,7 @@ exports.register = function (server, options, next) {
     path: '/users',
     config: {
       description: 'Get list of users',
+      tags: ['api', 'users'],
       validate: {
         query: {
           filter: Joi.object({
@@ -67,6 +68,7 @@ exports.register = function (server, options, next) {
     path: '/users',
     config: {
       description: 'Create new user',
+      tags: ['api', 'users'],
       validate: {
         payload: {
           name: Joi.string(),
@@ -146,6 +148,7 @@ exports.register = function (server, options, next) {
     path: '/users/{userId}',
     config: {
       description: 'Get user',
+      tags: ['api', 'users'],
       validate: {
         params: {
           userId: Joi.number().integer().required()
@@ -166,6 +169,7 @@ exports.register = function (server, options, next) {
     path: '/users/{userId}',
     config: {
       description: 'Delete user',
+      tags: ['api', 'users'],
       validate: {
         params: {
           userId: Joi.number().integer().required()

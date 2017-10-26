@@ -19,6 +19,7 @@ exports.register = function (server, options, next) {
     path: '/signup',
     config: {
       description: 'Create user account',
+      tags: ['api', 'auth'],
       auth: false,
       validate: {
         payload: {
@@ -111,6 +112,7 @@ exports.register = function (server, options, next) {
     path: '/login',
     config: {
       description: 'Log in',
+      tags: ['api', 'auth'],
       auth: false,
       validate: {
         payload: {
@@ -178,6 +180,7 @@ exports.register = function (server, options, next) {
     path: '/logout',
     config: {
       description: 'Destroy session',
+      tags: ['api', 'auth'],
       auth: {
         mode: 'try',
         strategy: 'jwt'
@@ -201,6 +204,7 @@ exports.register = function (server, options, next) {
     path: '/login/forgot',
     config: {
       description: 'Generate new password reset hash',
+      tags: ['api', 'auth'],
       auth: false,
       validate: {
         payload: {
@@ -254,6 +258,7 @@ exports.register = function (server, options, next) {
     path: '/login/reset',
     config: {
       description: 'Reset user password',
+      tags: ['api', 'auth'],
       auth: false,
       validate: {
         payload: {

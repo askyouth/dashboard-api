@@ -15,6 +15,7 @@ exports.register = function (server, options, next) {
     path: '/search',
     config: {
       description: 'Search everything',
+      tags: ['api', 'search'],
       validate: {
         query: {
           q: Joi.string().required()

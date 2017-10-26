@@ -18,6 +18,7 @@ exports.register = function (server, options, next) {
     path: '/topics',
     config: {
       description: 'Get topics',
+      tags: ['api', 'topics'],
       validate: {
         query: {
           filter: Joi.object({
@@ -56,6 +57,7 @@ exports.register = function (server, options, next) {
     path: '/topics',
     config: {
       description: 'Create topic',
+      tags: ['api', 'topics'],
       validate: {
         payload: {
           name: Joi.string().required(),
@@ -90,6 +92,7 @@ exports.register = function (server, options, next) {
     path: '/topics/{topicId}',
     config: {
       description: 'Get topic',
+      tags: ['api', 'topics'],
       validate: {
         params: {
           topicId: Joi.number().integer().required()
@@ -119,6 +122,7 @@ exports.register = function (server, options, next) {
     path: '/topics/{topicId}',
     config: {
       description: 'Update topic',
+      tags: ['api', 'topics'],
       validate: {
         params: {
           topicId: Joi.number().integer().required()
@@ -162,6 +166,7 @@ exports.register = function (server, options, next) {
     path: '/topics/{topicId}',
     config: {
       description: 'Remove topic',
+      tags: ['api', 'topics'],
       validate: {
         params: {
           topicId: Joi.number().integer().required()
@@ -190,6 +195,7 @@ exports.register = function (server, options, next) {
     path: '/topics/{topicId}/handles',
     config: {
       description: 'Get handles related to topic',
+      tags: ['api', 'topics'],
       validate: {
         params: {
           topicId: Joi.number().integer().required()

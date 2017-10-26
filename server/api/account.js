@@ -21,6 +21,7 @@ exports.register = function (server, options, next) {
     path: '/profile',
     config: {
       description: 'Get profile information and system stats',
+      tags: ['api', 'account']
     },
     handler (request, reply) {
       let data = Promise.props({
@@ -39,6 +40,7 @@ exports.register = function (server, options, next) {
     path: '/profile',
     config: {
       description: 'Update account',
+      tags: ['api', 'account'],
       validate: {
         payload: Joi.object({
           name: Joi.string(),

@@ -26,6 +26,7 @@ exports.register = function (server, options, next) {
     path: '/infographics',
     config: {
       description: 'Get list of infographics',
+      tags: ['api', 'infographics'],
       validate: {
         query: {
           filter: Joi.object({
@@ -65,7 +66,8 @@ exports.register = function (server, options, next) {
     method: 'GET',
     path: '/infographics/archive',
     config: {
-      description: 'Get infographics archive by month'
+      description: 'Get infographics archive by month',
+      tags: ['api', 'infographics']
     },
     handler (request, reply) {
       let result = Database.knex('infographic')
@@ -83,6 +85,7 @@ exports.register = function (server, options, next) {
     path: '/infographics',
     config: {
       description: 'Create new infographic',
+      tags: ['api', 'infographics'],
       payload: {
         output: 'stream',
         parse: true,
@@ -114,6 +117,7 @@ exports.register = function (server, options, next) {
     path: '/infographics/{infographicId}',
     config: {
       description: 'Get infographic',
+      tags: ['api', 'infographics'],
       validate: {
         params: {
           infographicId: Joi.number().integer().required()
@@ -135,6 +139,7 @@ exports.register = function (server, options, next) {
     path: '/infographics/{infographicId}/download',
     config: {
       description: 'Download infographic',
+      tags: ['api', 'infographics'],
       pre: [{
         assign: 'infographic',
         method: loadInfographic
@@ -155,6 +160,7 @@ exports.register = function (server, options, next) {
     path: '/infographics/{infographicId}',
     config: {
       description: 'Delete infographic',
+      tags: ['api', 'infographics'],
       validate: {
         params: {
           infographicId: Joi.number().integer().required()
@@ -180,6 +186,7 @@ exports.register = function (server, options, next) {
     path: '/{param*}',
     config: {
       description: 'Serve static content',
+      tags: ['api'],
       auth: false
     },
     handler: {

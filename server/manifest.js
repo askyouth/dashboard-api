@@ -3,6 +3,7 @@
 // Module dependencies.
 const Config = require('config')
 const Confidence = require('confidence')
+const Package = require('../package.json')
 
 // hack to return POJO
 const proto = Object.getPrototypeOf(Config)
@@ -62,13 +63,23 @@ const manifest = {
     plugin: 'vision'
   }, {
     plugin: {
-      register: 'lout',
+      register: 'hapi-swagger',
       options: {
-        endpoint: '/'
+        info: {
+          title: '#ASK Dashboard API documentation',
+          version: Package.version
+        },
+        securityDefinitions: {
+          jwt: {
+            type: 'apiKey',
+            name: 'Authorization',
+            in: 'header'
+          }
+        },
+        jsonEditor: true,
+        documentationPath: '/'
       }
     }
-  }, {
-    plugin: 'tv'
   }, {
     plugin: 'hapi-io'
   }, {

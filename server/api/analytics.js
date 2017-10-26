@@ -14,7 +14,8 @@ exports.register = function (server, options, next) {
     method: 'GET',
     path: '/analytics/klout',
     config: {
-      description: 'Get Klout score changes'
+      description: 'Get Klout score changes',
+      tags: ['api', 'analytics']
     },
     handler (request, reply) {
       let handles = knex
@@ -63,7 +64,8 @@ exports.register = function (server, options, next) {
     method: 'GET',
     path: '/analytics/contributors',
     config: {
-      description: 'Get top contributors'
+      description: 'Get top contributors',
+      tags: ['api', 'analytics']
     },
     handler (request, reply) {
       let contributors = knex('tweet')
@@ -113,6 +115,7 @@ exports.register = function (server, options, next) {
     path: '/analytics/tweeters',
     config: {
       description: 'Get most active users',
+      tags: ['api', 'analytics'],
       validate: {
         query: {
           days: Joi.number().integer().max(30).default(7),

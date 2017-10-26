@@ -29,6 +29,7 @@ exports.register = function (server, options, next) {
     path: '/tweets',
     config: {
       description: 'Get tweets',
+      tags: ['api', 'tweets'],
       auth: {
         mode: 'optional'
       },
@@ -79,6 +80,7 @@ exports.register = function (server, options, next) {
     path: '/tweets',
     config: {
       description: 'Create new tweet',
+      tags: ['api', 'tweets'],
       payload: {
         output: 'file',
         parse: true,
@@ -147,6 +149,7 @@ exports.register = function (server, options, next) {
     path: '/tweets/{id}',
     config: {
       description: 'Fetch tweet',
+      tags: ['api', 'tweets'],
       validate: {
         params: {
           id: Joi.string().required()
@@ -172,6 +175,7 @@ exports.register = function (server, options, next) {
     path: '/tweets/{id}/retweet',
     config: {
       description: 'Retweet tweet',
+      tags: ['api', 'tweets'],
       validate: {
         params: {
           id: Joi.string().required()
@@ -206,6 +210,7 @@ exports.register = function (server, options, next) {
     path: '/tweets/{id}/favorite',
     config: {
       description: 'Add tweet to favorites',
+      tags: ['api', 'tweets'],
       validate: {
         params: {
           id: Joi.string().required()
@@ -238,6 +243,7 @@ exports.register = function (server, options, next) {
     path: '/tweets/{id}/unfavorite',
     config: {
       description: 'Remove tweet from favorites',
+      tags: ['api', 'tweets'],
       validate: {
         params: {
           id: Joi.string().required()

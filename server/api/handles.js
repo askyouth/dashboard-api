@@ -39,6 +39,7 @@ exports.register = function (server, options, next) {
     path: '/handles',
     config: {
       description: 'Get list of handles',
+      tags: ['api', 'handles'],
       validate: {
         query: {
           filter: Joi.object({
@@ -82,6 +83,7 @@ exports.register = function (server, options, next) {
     path: '/handles',
     config: {
       description: 'Create new handle',
+      tags: ['api', 'handles'],
       validate: {
         payload: {
           username: Joi.string().required(),
@@ -130,6 +132,7 @@ exports.register = function (server, options, next) {
     path: '/handles/{handleId}',
     config: {
       description: 'Get handle',
+      tags: ['api', 'handles'],
       validate: {
         params: {
           handleId: Joi.string().required()
@@ -157,6 +160,7 @@ exports.register = function (server, options, next) {
     path: '/handles/{handleId}',
     config: {
       description: 'Update handle',
+      tags: ['api', 'handles'],
       validate: {
         params: {
           handleId: Joi.string().required()
@@ -188,6 +192,7 @@ exports.register = function (server, options, next) {
     path: '/handles/{handleId}',
     config: {
       description: 'Delete handle',
+      tags: ['api', 'handles'],
       validate: {
         params: {
           handleId: Joi.string().required()
@@ -215,6 +220,7 @@ exports.register = function (server, options, next) {
     path: '/handles/{handleId}/follow',
     config: {
       description: 'Follow user on Twitter',
+      tags: ['api', 'handles'],
       pre: [{
         method: loadHandle, assign: 'handle'
       }]
@@ -232,6 +238,7 @@ exports.register = function (server, options, next) {
     path: '/handles/{handleId}/unfollow',
     config: {
       description: 'Unfollow user on Twitter',
+      tags: ['api', 'handles'],
       pre: [{
         method: loadHandle, assign: 'handle'
       }]
@@ -249,6 +256,7 @@ exports.register = function (server, options, next) {
     path: '/handles/{handleId}/topics',
     config: {
       description: 'Get topics related to handle',
+      tags: ['api', 'handles'],
       validate: {
         params: {
           handleId: Joi.string().required()
@@ -299,6 +307,7 @@ exports.register = function (server, options, next) {
     path: '/handles/{handleId}/topics/{topicId}',
     config: {
       description: 'Attach topic to handle',
+      tags: ['api', 'handles'],
       validate: {
         params: {
           handleId: Joi.string().required(),
@@ -325,6 +334,7 @@ exports.register = function (server, options, next) {
     path: '/handles/{handleId}/topics/{topicId}',
     config: {
       description: 'Detach topic from handle',
+      tags: ['api', 'handles'],
       validate: {
         params: {
           handleId: Joi.string().required(),
