@@ -46,7 +46,7 @@
     "inert": "^4.0.2",
     "joi": "^13.0.1",
     "jsonwebtoken": "^8.1.0",
-    "knex": "^0.13.0",
+    "knex": "^0.14.0",
     "lodash": "^4.15.0",
     "mime-types": "^2.1.14",
     "node-tweet-stream": "^2.0.1",
