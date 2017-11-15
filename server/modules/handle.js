@@ -15,7 +15,7 @@ exports.register = function (server, options, next) {
 
   const Camp = Database.model('Camp')
   const Handle = Database.model('Handle')
-  const log = server.log.bind(server, ['services', 'handle'])
+  const log = server.log.bind(server, ['modules', 'handle'])
 
   const campSettingsMap = {
     [Camp.YOUTH]: 'twitter.list.youth',

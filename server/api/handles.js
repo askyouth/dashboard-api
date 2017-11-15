@@ -12,6 +12,7 @@ exports.register = function (server, options, next) {
   const TwitterStream = server.plugins['services/twitter/stream']
   const Topics = server.plugins['modules/topic']
   const Handles = server.plugins['modules/handle']
+  const Contribution = server.plugins['modules/contribution']
 
   const Topic = Database.model('Topic')
   const Handle = Database.model('Handle')
@@ -119,9 +120,8 @@ exports.register = function (server, options, next) {
         .then((handle) => handle.refresh({ withRelated: ['camp'] }))
         .tap((handle) => Handles.addToTwitterList(handle))
         .tap((handle) => TwitterStream.follow(handle.get('id')))
-        .tap((handle) => {
-          if (follow) return Twitter.friendshipCreate(handle.get('id'))
-        })
+        .tap((handle) => follow && Twitter.friendshipCreate(handle.get('id')))
+        .tap((handle) => Contribution.handleCreated(handle.toJSON()))
 
       reply(handle)
     }
@@ -204,12 +204,13 @@ exports.register = function (server, options, next) {
     },
     handler (request, reply) {
       let handle = request.pre.handle
+      let handleJson = handle.toJSON()
 
-      let handleId = handle.get('id')
       let promise = Handles.removeFromTwitterList(handle)
         .then(() => handle.destroy())
-        .tap(() => TwitterStream.unfollow(handleId))
-        .tap(() => Twitter.friendshipDestroy(handleId))
+        .tap(() => TwitterStream.unfollow(handleJson.id))
+        .tap(() => Twitter.friendshipDestroy(handleJson.id))
+        .tap(() => Contribution.handleRemoved(handleJson))
 
       reply(promise).code(204)
     }
@@ -376,7 +377,8 @@ exports.register.attributes = {
     'services/twitter',
     'services/twitter/stream',
     'modules/topic',
-    'modules/handle'
+    'modules/handle',
+    'modules/contribution'
   ]
 }
 

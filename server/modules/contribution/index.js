@@ -10,10 +10,44 @@ exports.register = function (server, options, next) {
   const Database = server.plugins['services/database']
 
   const Camp = Database.model('Camp')
-  const Handle = Database.model('Handle')
   const Contribution = Database.model('Contribution')
 
   const engine = new Evaluator()
+  const log = server.log.bind(server, ['modules', 'contribution'])
+
+  const Handles = {
+    store: {
+      [Camp.BROKER]: new Set(),
+      [Camp.YOUTH]: new Set(),
+      [Camp.POLICY_MAKER]: new Set()
+    },
+    async init () {
+      let handles = await Database.knex('handle')
+        .whereIn('camp_id', Object.keys(this.store))
+        .select(['id', 'camp_id'])
+
+      handles.forEach(({ id, camp_id }) => this.add(camp_id, id))
+    },
+    add (camp, id) {
+      this.store[camp].add(id)
+    },
+    delete (camp, id) {
+      this.store[camp].delete(id)
+    },
+    has (id) {
+      for (let ids of Object.values(this.store)) {
+        if (ids.has(id)) return true
+      }
+      return false
+    },
+    camp (id) {
+      for (let [camp, ids] of Object.entries(this.store)) {
+        if (ids.has(id)) return +camp
+      }
+    }
+  }
+
+  Handles.init().catch((err) => log(`error init handles: ${err.message}`))
 
   // check if tweet is candidate for contribution:
   //   broker tweets mentioning both youth or policy maker
@@ -25,126 +59,141 @@ exports.register = function (server, options, next) {
   // create new contribution with this tweet
 
   engine.addRule({
-    description: 'If tweet has parent, fetch parent',
-    match: ['tweet', (ctx) => ctx.tweet.related('parent').fetch()],
-    action: (ctx) => ({
-      parent: ctx.tweet.related('parent')
+    description: 'Check if tweet has parent and fetch it',
+    match: ({ tweet }) => tweet.has('parent_id'),
+    action: async ({ tweet }) => ({
+      parent: await tweet.related('parent').fetch()
     })
   })
 
   engine.addRule({
-    description: 'If tweet is reply to contribution, fetch contribution',
-    match: ['parent', (ctx) => ctx.parent.related('contribution').fetch()],
-    action: (ctx) => ({
-      contribution: ctx.parent.related('contribution')
+    description: 'Check if tweet is reply to contribution and fetch it',
+    match: ({ parent }) => parent.has('contribution_id'),
+    action: async ({ parent }) => ({
+      contribution: await parent.related('contribution').fetch()
     })
   })
 
   engine.addRule({
-    description: 'If tweet author is in database, fetch handle',
-    match: ['tweet', (ctx) => ctx.tweet.related('handle').fetch()],
-    action: (ctx) => ({
-      handle: ctx.tweet.related('handle')
+    description: 'Check if tweet author is handle',
+    match: ({ tweet }) => Handles.has(tweet.get('user_id')),
+    action: ({ tweet }) => ({
+      handle: Object.assign({
+        camp: Handles.camp(tweet.get('user_id'))
+      }, tweet.get('user'))
     })
   })
 
   engine.addRule({
-    description: 'If handle is loaded, fetch mentioned handles',
-    match: ['tweet', '!contribution'],
-    action: (ctx) => {
-      let mentions = _.map(ctx.tweet.get('entities').user_mentions, 'id')
-      return Handle.collection()
-        .query('whereIn', 'id', mentions)
-        .fetch({ require: true })
-        .then((handles) => ({ mentions: handles }))
-    }
+    description: 'If not part of existing contribution, extract mentions',
+    match: '!contribution',
+    action: ({ tweet }) => ({
+      mentions: tweet.get('entities').user_mentions
+        .map((mention) => Object.assign({
+          camp: Handles.camp(mention.id)
+        }, mention))
+    })
   })
 
   engine.addRule({
-    description: 'If tweet author is broker, assign flag to context',
-    match: ['handle', (ctx) => ctx.handle.get('camp_id') === Camp.BROKER],
-    action: (ctx) => ({ authorBroker: true })
+    description: 'Check if tweet author is Broker',
+    match: 'handle.camp',
+    action: ({ handle: { camp } }) => ({
+      authorBroker: (camp === Camp.BROKER)
+    })
   })
 
   engine.addRule({
-    description: 'If tweet author is policy maker, assign flag to context',
-    match: ['handle', (ctx) => ctx.handle.get('camp_id') === Camp.POLICY_MAKER],
-    action: (ctx) => ({ authorPolicyMaker: true })
+    description: 'Check if tweet author is Policy Maker',
+    match: 'handle.camp',
+    action: ({ handle: { camp } }) => ({
+      authorPolicyMaker: (camp === Camp.POLICY_MAKER)
+    })
   })
 
   engine.addRule({
-    description: 'If tweet author is youth, assign flag to context',
-    match: ['handle', (ctx) => ctx.handle.get('camp_id') === Camp.YOUTH],
-    action: (ctx) => ({ authorYouth: true })
+    description: 'Check if tweet author is Youth',
+    match: 'handle.camp',
+    action: ({ handle: { camp } }) => ({
+      authorYouth: (camp === Camp.YOUTH)
+    })
   })
 
   engine.addRule({
-    description: 'If tweet mentions broker, assign flag to context',
-    match: ['mentions', (ctx) => !!~ctx.mentions.pluck('camp_id').indexOf(Camp.BROKER)],
-    action: (ctx) => ({ mentionsBroker: true })
+    description: 'Check if tweet mentions Broker',
+    match: 'mentions',
+    action: ({ mentions }) => ({
+      mentionsBroker: !!mentions.find(({ camp }) => (camp === Camp.BROKER))
+    })
   })
 
   engine.addRule({
-    description: 'If tweet mentions any pm handles, assign to context',
-    match: ['mentions', (ctx) => !!~ctx.mentions.pluck('camp_id').indexOf(Camp.POLICY_MAKER)],
-    action: (ctx) => ({ mentionsPolicyMaker: true })
+    description: 'Check if tweet mentions any Policy Maker handles',
+    match: 'mentions',
+    action: ({ mentions }) => ({
+      mentionsPolicyMaker: !!mentions.find(({ camp }) => (camp === Camp.POLICY_MAKER))
+    })
   })
 
   engine.addRule({
-    description: 'If tweet mentions any youth handles, assign to context',
-    match: ['mentions', (ctx) => !!~ctx.mentions.pluck('camp_id').indexOf(Camp.YOUTH)],
-    action: (ctx) => ({ mentionsYouth: true })
+    description: 'Check if tweet mentions any Youth handles',
+    match: 'mentions',
+    action: ({ mentions }) => ({
+      mentionsYouth: !!mentions.find(({ camp }) => (camp === Camp.YOUTH))
+    })
   })
 
   engine.addRule({
     description: 'If tweet author is broker and it mentions pm and youth, it is a contribution',
     match: ['authorBroker', 'mentionsPolicyMaker', 'mentionsYouth'],
-    action: (ctx) => ({ isContribution: true })
+    action: (ctx) => ({
+      newContribution: true
+    })
   })
 
   engine.addRule({
     description: 'If tweet author is policy maker and it mentions broker and youth, it is a contribution',
     match: ['authorPolicyMaker', 'mentionsYouth', 'mentionsBroker'],
-    action: (ctx) => ({ isContribution: true })
+    action: (ctx) => ({
+      newContribution: true
+    })
   })
 
   engine.addRule({
     description: 'If tweet author is youth and it mentions broker and policy maker, it is a contribution',
     match: ['authorYouth', 'mentionsPolicyMaker', 'mentionsBroker'],
-    action: (ctx) => ({ isContribution: true })
+    action: (ctx) => ({
+      newContribution: true
+    })
   })
 
   engine.addRule({
-    description: 'If tweet is starts new contribution, create contribution',
-    match: 'isContribution',
-    action: (ctx) => {
-      return Contribution.forge({
-        tweet_id: ctx.tweet.get('id'),
-        camp_id: ctx.handle ? ctx.handle.get('camp_id') : null,
-        involves_pm: ctx.authorPolicyMaker === true,
-        involves_youth: ctx.authorYouth === true,
+    description: 'Check if tweet is starts new contribution and create one',
+    match: 'newContribution',
+    action: async ({ tweet, handle: { camp } = {}, authorYouth, authorPolicyMaker }) => ({
+      contribution: await Contribution.forge({
+        tweet_id: tweet.get('id'),
+        camp_id: camp,
+        involves_pm: authorPolicyMaker === true,
+        involves_youth: authorYouth === true,
         tweets: 0,
         contributors: []
-      }).save().then((contribution) => ({
-        contribution: contribution
-      }))
-    }
+      }).save()
+    })
   })
 
   engine.addRule({
     description: 'If tweet is part of contribution, update contribution',
     match: 'contribution',
-    action: (ctx) => {
-      let tweet = ctx.tweet
-      let contribution = ctx.contribution
-      let contributors = contribution.get('contributors').concat([tweet.get('user').screen_name])
+    action: async ({ tweet, contribution, handle: { screen_name }, authorYouth, authorPolicyMaker }) => {
+      let contributors = contribution.get('contributors').concat([screen_name])
       tweet.set('contribution_id', contribution.get('id'))
       contribution.set('tweets', contribution.get('tweets') + 1)
       contribution.set('contributors', _.uniq(contributors))
-      if (ctx.authorYouth) contribution.set('involves_youth', true)
-      if (ctx.authorPolicyMaker) contribution.set('involves_pm', true)
-      return Promise.join(tweet.save(), contribution.save())
-        .return({ contribution: contribution })
+      if (authorYouth) contribution.set('involves_youth', true)
+      if (authorPolicyMaker) contribution.set('involves_pm', true)
+
+      await Promise.join(tweet.save(), contribution.save())
     }
   })
 
@@ -216,9 +265,19 @@ exports.register = function (server, options, next) {
       .then((count) => +count)
   }
 
+  function handleCreated ({ id, camp_id: campId }) {
+    Handles.add(campId, id)
+  }
+
+  function handleRemoved ({ id, camp_id: campId }) {
+    Handles.delete(campId, id)
+  }
+
   server.expose('process', process)
   server.expose('fetch', fetch)
   server.expose('count', count)
+  server.expose('handleCreated', handleCreated)
+  server.expose('handleRemoved', handleRemoved)
 
   next()
 }

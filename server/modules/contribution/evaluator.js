@@ -1,17 +1,18 @@
 'use strict'
 
 // Module dependencies.
+const _ = require('lodash')
 const Promise = require('bluebird')
 
 const matchers = {
-  '!': (v) => !v,
-  '': (v) => !!v
+  '': (v) => v,
+  '!': (v) => !v
 }
 
 function prepareMatch (match) {
   if (typeof match === 'string') {
-    let r = match.match(/^(!?)(.+)$/)
-    return (ctx) => matchers[r[1]](ctx[r[2]])
+    let [, prefix, prop] = match.match(/^(!?)(.+)$/)
+    return (ctx) => matchers[prefix](_.get(ctx, prop, false))
   }
   return match
 }
