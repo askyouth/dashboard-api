@@ -51,7 +51,7 @@ exports.register = function (server, options, next) {
   const reconnect = _.throttle(() => {
     log('initiate reconnect')
     stream.reconnect()
-  }, 30 * 1000, {
+  }, 60 * 1000, {
     leading: false,
     trailing: true
   })
