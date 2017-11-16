@@ -51,34 +51,7 @@ exports.register = function (server, options, next) {
     trailing: true
   })
 
-  function errorHandler (err) {
-    log(`error: ${err.message}`)
-  }
-
-  function tweetHandler (tweet) {
-    storeTweet(transformTweet(tweet))
-      .then((tweet) => [
-        tweet,
-        Topics.process(tweet),
-        Contributions.process(tweet)
-      ])
-      .spread(broadcast)
-      .catch((err) => log(`error: ${err.message}`))
-  }
-
-  function storeTweet (tweet) {
-    return Tweet.forge(tweet).save(null, { method: 'insert' })
-  }
-
-  function broadcast (tweet, topics, contribution) {
-    tweet = tweet.toJSON()
-    IO.in('timeline').emit('tweets:new', tweet)
-    IO.in(`handle:${tweet.user_id}`).emit('tweets:new', tweet)
-    topics.forEach((topic) => IO.in(`topic:${topic.id}`).emit('tweets:new', tweet))
-    if (contribution) {
-      IO.in(`contribution:${contribution.id}`).emit('tweets:new', tweet)
-    }
-  }
+  init().catch((err) => log(`error init stream: ${err.message}`))
 
   function track (keywords) {
     log(`tracking ${keywords}`)
@@ -104,20 +77,17 @@ exports.register = function (server, options, next) {
     reconnect()
   }
 
-  server.expose('track', track)
-  server.expose('untrack', untrack)
-  server.expose('follow', follow)
-  server.expose('unfollow', unfollow)
+  async function init () {
+    let [topics, handles] = await Promise.all([
+      Topic.collection().query('whereNot', 'keywords', '{}').fetch(),
+      Handle.collection().query('whereNot', 'camp_id', null).fetch()
+    ])
 
-  Promise.join(
-    Topic.collection().fetch(),
-    Handle.collection().fetch()
-  ).spread((topics, handles) => {
     let users = handles.pluck('id').slice(0, MAX_USERS)
     let keywords = topics.pluck('keywords')
-      .reduce((memo, keywords) => memo.concat(keywords), [])
-      .concat(handles.pluck('username').map((username) => `@${username}`))
-      .slice(0, MAX_KEYWORDS)
+        .reduce((memo, keywords) => memo.concat(keywords), [])
+        .concat(handles.pluck('username').map((username) => `@${username}`))
+        .slice(0, MAX_KEYWORDS)
 
     log(`following ${users.length} users and ${keywords.length} keywords`)
 
@@ -125,7 +95,42 @@ exports.register = function (server, options, next) {
     keywords.length && track(keywords)
 
     reconnect()
-  }).nodeify(next)
+  }
+
+  async function tweetHandler (data) {
+    try {
+      let tweet = await Tweet.forge(transformTweet(data))
+          .save(null, { method: 'insert' })
+      let [topics, contribution] = await Promise.all([
+        Topics.process(tweet),
+        Contributions.process(tweet)
+      ])
+
+      broadcast(tweet.toJSON(), topics, contribution && contribution.toJSON())
+    } catch (err) {
+      log(`error processing tweet: ${err.message}`)
+    }
+  }
+
+  function broadcast (tweet, topics, contribution) {
+    IO.in('timeline').emit('tweets:new', tweet)
+    IO.in(`handle:${tweet.user_id}`).emit('tweets:new', tweet)
+    topics.forEach((topic) => IO.in(`topic:${topic}`).emit('tweets:new', tweet))
+    if (contribution) {
+      IO.in(`contribution:${contribution.id}`).emit('tweets:new', tweet)
+    }
+  }
+
+  function errorHandler (err) {
+    log(`error: ${err.message}`)
+  }
+
+  server.expose('track', track)
+  server.expose('untrack', untrack)
+  server.expose('follow', follow)
+  server.expose('unfollow', unfollow)
+
+  next()
 }
 
 exports.register.attributes = {

@@ -72,20 +72,13 @@ exports.register = function (server, options, next) {
       let topic = Topic.forge(payload).save().tap((topic) => {
         if (topic.get('keywords').length) {
           TwitterStream.track(topic.get('keywords'))
+          Topics.created(topic.toJSON())
         }
       })
 
       reply(topic)
     }
   })
-
-  function loadTopic (request, reply) {
-    let topicId = request.params.topicId
-    let topic = Topic.forge({ id: topicId })
-      .fetch({ require: true })
-
-    reply(topic)
-  }
 
   server.route({
     method: 'GET',
@@ -150,9 +143,11 @@ exports.register = function (server, options, next) {
         if (hasChangedKeywords) {
           if (previousKeywords.length) {
             TwitterStream.untrack(previousKeywords)
+            Topics.removed(topic.toJSON())
           }
           if (topic.get('keywords').length) {
             TwitterStream.track(topic.get('keywords'))
+            Topics.created(topic.toJSON())
           }
         }
       })
@@ -178,11 +173,12 @@ exports.register = function (server, options, next) {
     },
     handler (request, reply) {
       let topic = request.pre.topic
+      let { id, keywords } = topic.toJSON()
 
-      let keywords = topic.get('keywords')
       let promise = topic.destroy().then(() => {
         if (keywords.length) {
           TwitterStream.untrack(keywords)
+          Topics.removed({ id, keywords })
         }
       })
 
@@ -241,6 +237,14 @@ exports.register = function (server, options, next) {
       reply(result)
     }
   })
+
+  function loadTopic (request, reply) {
+    let topicId = request.params.topicId
+    let topic = Topic.forge({ id: topicId })
+        .fetch({ require: true })
+
+    reply(topic)
+  }
 
   next()
 }
