@@ -42,9 +42,14 @@ exports.register = function (server, options, next) {
   })
   stream.on('error', errorHandler)
   stream.on('tweet', tweetHandler)
+  stream.on('connect', infoHandler('connect'))
+  stream.on('reconnect', infoHandler('reconnect'))
+  stream.on('disconnect', infoHandler('disconnect'))
+  stream.on('warning', infoHandler('warning'))
+  stream.on('limit', infoHandler('limit'))
 
   const reconnect = _.throttle(() => {
-    log('reconnect')
+    log('initiate reconnect')
     stream.reconnect()
   }, 30 * 1000, {
     leading: false,
@@ -123,6 +128,13 @@ exports.register = function (server, options, next) {
 
   function errorHandler (err) {
     log(`error: ${err.message}`)
+  }
+
+  function infoHandler (type) {
+    return function () {
+      let args = [...arguments]
+      log(`${type}: ${JSON.stringify(args)}`)
+    }
   }
 
   server.expose('track', track)
