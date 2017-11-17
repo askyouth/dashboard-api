@@ -49,7 +49,11 @@ exports.register = function (server, options, next) {
   stream.on('limit', infoHandler('limit'))
 
   const reconnect = _.throttle(() => {
-    log('initiate reconnect')
+    let tracking = stream.tracking().length
+    let following = stream.following().length
+
+    log(`initiate reconnect: ${tracking} keywords and ${following} users`)
+
     stream.reconnect()
   }, 60 * 1000, {
     leading: false,
@@ -59,27 +63,53 @@ exports.register = function (server, options, next) {
   init().catch((err) => log(`error init stream: ${err.message}`))
 
   function track (keywords) {
-    log(`tracking ${keywords}`)
-    stream.track(keywords, false)
-    reconnect()
+    let tracking = stream.tracking()
+    let avail = MAX_KEYWORDS - tracking.length
+    let toTrack = _(keywords).uniq().without(...tracking).slice(0, avail).value()
+
+    log(`tracking ${toTrack.length}/${keywords.length} new keywords`)
+
+    if (toTrack.length) {
+      stream.track(toTrack, false)
+      reconnect()
+    }
   }
 
   function untrack (keywords) {
-    log(`untracking ${keywords}`)
-    stream.untrack(keywords, false)
-    reconnect()
+    let tracking = stream.tracking().length
+    keywords.forEach((keyword) => stream.untrack(keyword, false))
+    let untracked = tracking - stream.tracking().length
+
+    log(`untracked ${untracked}/${keywords.length}`)
+
+    if (untracked) {
+      reconnect()
+    }
   }
 
   function follow (handles) {
-    log(`following ${handles}`)
-    stream.follow(handles, false)
-    reconnect()
+    let following = stream.following()
+    let avail = MAX_USERS - following.length
+    let toFollow = _(handles).uniq().without(...following).slice(0, avail).value()
+
+    log(`following ${toFollow.length}/${handles.length} new handles`)
+
+    if (toFollow.length) {
+      stream.follow(toFollow, false)
+      reconnect()
+    }
   }
 
   function unfollow (handles) {
-    log(`unfollowing ${handles}`)
-    stream.unfollow(handles, false)
-    reconnect()
+    let following = stream.following().length
+    handles.forEach((handle) => stream.unfollow(handle, false))
+    let unfollowed = following - stream.following().length
+
+    log(`unfollowed ${unfollowed}/${handles.length} users`)
+
+    if (unfollowed) {
+      reconnect()
+    }
   }
 
   async function init () {
@@ -88,13 +118,12 @@ exports.register = function (server, options, next) {
       Handle.collection().query('whereNot', 'camp_id', null).fetch()
     ])
 
-    let users = handles.pluck('id').slice(0, MAX_USERS)
+    let users = handles.pluck('id')
     let keywords = topics.pluck('keywords')
         .reduce((memo, keywords) => memo.concat(keywords), [])
         .concat(handles.pluck('username').map((username) => `@${username}`))
-        .slice(0, MAX_KEYWORDS)
 
-    log(`following ${users.length} users and ${keywords.length} keywords`)
+    log(`loaded ${users.length} users and ${keywords.length} keywords from database`)
 
     users.length && follow(users)
     keywords.length && track(keywords)
