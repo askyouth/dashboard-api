@@ -63,6 +63,7 @@ exports.register = function (server, options, next) {
   init().catch((err) => log(`error init stream: ${err.message}`))
 
   function track (keywords) {
+    keywords = _.castArray(keywords)
     let tracking = stream.tracking()
     let avail = MAX_KEYWORDS - tracking.length
     let toTrack = _(keywords).uniq().without(...tracking).slice(0, avail).value()
@@ -76,6 +77,7 @@ exports.register = function (server, options, next) {
   }
 
   function untrack (keywords) {
+    keywords = _.castArray(keywords)
     let tracking = stream.tracking().length
     keywords.forEach((keyword) => stream.untrack(keyword, false))
     let untracked = tracking - stream.tracking().length
@@ -88,6 +90,7 @@ exports.register = function (server, options, next) {
   }
 
   function follow (handles) {
+    handles = _.castArray(handles)
     let following = stream.following()
     let avail = MAX_USERS - following.length
     let toFollow = _(handles).uniq().without(...following).slice(0, avail).value()
@@ -101,6 +104,7 @@ exports.register = function (server, options, next) {
   }
 
   function unfollow (handles) {
+    handles = _.castArray(handles)
     let following = stream.following().length
     handles.forEach((handle) => stream.unfollow(handle, false))
     let unfollowed = following - stream.following().length
