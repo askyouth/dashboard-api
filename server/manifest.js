@@ -145,6 +145,8 @@ const manifest = {
       }
     }
   }, {
+    plugin: './services/twitter/metrics'
+  }, {
     plugin: './modules/settings'
   }, {
     plugin: './modules/user'

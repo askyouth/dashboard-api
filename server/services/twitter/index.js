@@ -97,6 +97,11 @@ exports.register = function (server, options, next) {
     return twitter.postAsync('friendships/destroy', { user_id: id })
   }
 
+  function statusesLookup (ids, params) {
+    params = Object.assign({ id: ids.join(',') }, params)
+    return twitter.postAsync('statuses/lookup', params)
+  }
+
   function getUsingCursor (path, params, prop) {
     let data = []
     let done = function (result) {
@@ -121,6 +126,7 @@ exports.register = function (server, options, next) {
   server.expose('listRemoveMember', listRemoveMember)
   server.expose('friendshipCreate', friendshipCreate)
   server.expose('friendshipDestroy', friendshipDestroy)
+  server.expose('statusesLookup', statusesLookup)
 
   server.expose('TwitterError', Twitter.TwitterError)
 

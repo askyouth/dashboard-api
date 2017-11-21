@@ -3,6 +3,8 @@
 // Module dependencies.
 const Joi = require('joi')
 const Deputy = require('hapi-deputy')
+const csvWriter = require('csv-write-stream')
+const { PassThrough } = require('stream')
 
 exports.register = function (server, options, next) {
   const Database = server.plugins['services/database']
@@ -68,7 +70,7 @@ exports.register = function (server, options, next) {
       tags: ['api', 'analytics']
     },
     handler (request, reply) {
-      let contributors = knex('tweet')
+      let contributors = knex
         .select([
           'handle.id',
           'handle.username',
@@ -80,6 +82,7 @@ exports.register = function (server, options, next) {
           'handle.klout_score',
           knex.raw('count(tweet.id) as contributions')
         ])
+        .from('tweet')
         .join('handle', 'tweet.user_id', 'handle.id')
         .join('camp', 'handle.camp_id', 'camp.id')
         .whereNotNull('tweet.contribution_id')
@@ -177,6 +180,72 @@ exports.register = function (server, options, next) {
         })))
 
       reply(handles)
+    }
+  })
+
+  server.route({
+    method: 'GET',
+    path: '/analytics/metrics',
+    config: {
+      description: 'Export metrics',
+      tags: ['api', 'analytics']
+    },
+    async handler (request, reply) {
+      let result = await knex.raw(`
+        WITH metrics AS (
+          SELECT
+            coalesce(t.name, 'Uncategorized') topic,
+            coalesce(ccc.contributions, 0)      contributions,
+            coalesce(ccc.tweets, 0)             tweets,
+            coalesce(ccc.favorites, 0)          favorites,
+            coalesce(ccc.retweets, 0)           retweets
+          FROM (SELECT
+                  cc.topic_id,
+                  count(*)         contributions,
+                  sum(cc.tweets)    tweets,
+                  sum(cc.favorites) favorites,
+                  sum(cc.retweets)  retweets
+                FROM (SELECT
+                        c.id,
+                        c.topic_id,
+                        c.tweets,
+                        sum(tt.favorites) favorites,
+                        sum(tt.retweets)  retweets
+                      FROM contribution c
+                        JOIN (SELECT
+                                t.id,
+                                t.retweets,
+                                t.favorites,
+                                t.contribution_id
+                              FROM tweet t
+                              WHERE t.contribution_id IS NOT NULL) tt ON tt.contribution_id = c.id
+                      GROUP BY c.id) AS cc
+                GROUP BY cc.topic_id) AS ccc FULL OUTER JOIN topic AS t ON ccc.topic_id = t.id
+          ORDER BY topic ASC
+        )
+        SELECT *
+        FROM metrics
+        UNION ALL
+        SELECT
+          'Total',
+          sum(contributions),
+          sum(tweets),
+          sum(favorites),
+          sum(retweets)
+        FROM metrics;
+      `)
+
+      let csv = csvWriter()
+      let pass = csv.pipe(new PassThrough({
+        writableObjectMode: true
+      }))
+
+      result.rows.forEach((row) => csv.write(row))
+      csv.end()
+
+      reply(pass)
+        .type('text/csv')
+        .header('Content-Disposition', `attachment; filename="metrics.csv"`)
     }
   })
 

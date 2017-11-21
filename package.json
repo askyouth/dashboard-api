@@ -31,6 +31,7 @@
     "boom": "^6.0.0",
     "confidence": "^3.0.1",
     "config": "^1.21.0",
+    "csv-write-stream": "^2.0.0",
     "dotenv": "^4.0.0",
     "fs-blob-store": "^5.2.1",
     "glue": "^4.0.0",
