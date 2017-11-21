@@ -10,7 +10,7 @@ exports.register = function (server, options, next) {
   const knex = Database.knex
   const log = server.log.bind(server, ['services', 'twitter', 'metrics'])
 
-  runner(run, 1000)
+  runner(run, 60 * 1000)
 
   async function run ({ lastId } = {}) {
     log(`fetching from ${lastId || 'beginning'}`)
