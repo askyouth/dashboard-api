@@ -13,7 +13,7 @@ exports.register = function (server, options, next) {
   runner(run, 1000)
 
   async function run ({ lastId } = {}) {
-    log(`fetching from ${lastId}`)
+    log(`fetching from ${lastId || 'beginning'}`)
 
     let ids = await getTweetIds(lastId)
     if (!ids.length) return {}
