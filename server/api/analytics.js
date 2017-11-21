@@ -196,7 +196,7 @@ exports.register = function (server, options, next) {
           SELECT
             coalesce(t.name, 'Uncategorized') topic,
             coalesce(ccc.contributions, 0)      contributions,
-            coalesce(ccc.tweets, 0)             tweets,
+            coalesce(ccc.tweets, 0)             replies,
             coalesce(ccc.favorites, 0)          favorites,
             coalesce(ccc.retweets, 0)           retweets
           FROM (SELECT
@@ -229,7 +229,7 @@ exports.register = function (server, options, next) {
         SELECT
           'Total',
           sum(contributions),
-          sum(tweets),
+          sum(replies),
           sum(favorites),
           sum(retweets)
         FROM metrics;
