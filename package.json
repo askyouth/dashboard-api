@@ -50,7 +50,7 @@
     "knex": "^0.14.0",
     "lodash": "^4.15.0",
     "mime-types": "^2.1.14",
-    "node-tweet-stream": "https://github.com/djelic/node-tweet-stream#fix-node-8",
+    "node-tweet-stream": "^2.0.1",
     "node-uuid": "^1.4.7",
     "node_klout": "^0.3.1",
     "nodemailer": "^4.3.0",

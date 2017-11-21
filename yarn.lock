@@ -2423,9 +2423,9 @@ node-pre-gyp@0.6.36:
     tar "^2.2.1"
     tar-pack "^3.4.0"
 
-"node-tweet-stream@https://github.com/djelic/node-tweet-stream#fix-node-8":
+node-tweet-stream@^2.0.1:
   version "2.0.1"
-  resolved "https://github.com/djelic/node-tweet-stream#542340574789a15c7ba004bff513b14eaa1c43fe"
+  resolved "https://registry.yarnpkg.com/node-tweet-stream/-/node-tweet-stream-2.0.1.tgz#fb4ff15fd695211d0fde59f6e6557afc48e1d791"
   dependencies:
     event-stream "~3.1.0"
     request "^2.55.0"
