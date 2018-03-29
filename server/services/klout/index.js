@@ -36,8 +36,23 @@ exports.register = function (server, options, next) {
     })
   }
 
+  class KloutError extends Error {}
+
   function getUserScore (kloutId) {
     return klout.getUserScoreAsync(kloutId)
+      .then((result) => {
+        if (result.validationErrors) {
+          throw new KloutError('Invalid Klout ID')
+        }
+        return result
+      })
+  }
+
+  function deleteKlout (handle) {
+    return handle.save({
+      klout_id: null,
+      klout_score: null
+    })
   }
 
   function check () {
@@ -52,7 +67,15 @@ exports.register = function (server, options, next) {
           .orderByRaw('last_check asc nulls first')
       })
       .fetch({ require: true })
-      .then((handle) => [handle, getUserScore(handle.get('klout_id'))])
+      .then((handle) => [
+        handle,
+        getUserScore(handle.get('klout_id'))
+          .catch(KloutError, (err) => {
+            return deleteKlout(handle).then(() => {
+              throw err
+            })
+          })
+      ])
       .spread((handle, klout) => Promise.join(
         handle.save({ klout_score: klout.score }),
         KloutScore.forge({
