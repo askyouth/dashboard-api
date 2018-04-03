@@ -110,6 +110,7 @@ exports.register = function (server, options, next) {
 
   function create (data) {
     return Klout.getIdentity(data.username)
+      .catch(() => ({})) // ignore error
       .then((klout) => {
         data = Object.assign({ klout_id: klout.id }, data)
         return Handle.forge(data).save(null, { method: 'insert' })
