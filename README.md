@@ -1,6 +1,6 @@
 # ASK Dashboard
 
-Dashboard app consists of two parts, [Node.js](https://nodejs.org/) API on top of [hapi](https://hapijs.com/) framework and frontend in [Angular.js](https://angularjs.org/).
+Dashboard app consists of two parts, [Node.js](https://nodejs.org/) [API](https://github.com/askyouth/dashboard-api) on top of [hapi](https://hapijs.com/) framework and [frontend](https://github.com/askyouth/dashboard-front) in [Angular.js](https://angularjs.org/).
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
@@ -14,6 +14,7 @@ Dashboard app consists of two parts, [Node.js](https://nodejs.org/) API on top o
         - [Setup environment](#setup-environment)
         - [Run migrations and seed database](#run-migrations-and-seed-database)
         - [Start](#start)
+        - [Setup frontend app](#setup-frontend-app)
     - [License](#license)
 
 <!-- markdown-toc end -->
@@ -68,6 +69,10 @@ yarn knex seed:run
 ```bash
 yarn start
 ```
+
+### Setup frontend app
+
+Please refer to documentation for [askyouth/dashboard-front](https://github.com/askyouth/dashboard-front) for installation instructions.
 
 ## License
 
