@@ -21,7 +21,7 @@
     "api"
   ],
   "author": "UX Passion (http://uxpassion.com)",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/askyouth/dashboard-api/issues"
   },
