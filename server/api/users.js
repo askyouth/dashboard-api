@@ -4,33 +4,22 @@
 const Joi = require('joi')
 const Boom = require('boom')
 const Config = require('config')
+const Deputy = require('hapi-deputy')
+const Promise = require('bluebird')
 
-const NotFoundError = Boom.notFound
-const BadRequestError = Boom.badRequest
+exports.register = function (server, options, next) {
+  const Mail = server.plugins['services/mail']
+  const Auth = server.plugins['services/auth']
+  const Database = server.plugins['services/database']
+  const Users = server.plugins['modules/user']
 
-const internals = {}
-
-internals.dependencies = [
-  'auth',
-  'database',
-  'services/user',
-  'services/mail'
-]
-
-internals.applyRoutes = (server, next) => {
-  const UserService = server.plugins['services/user']
-  const MailService = server.plugins['services/mail']
-  const AuthService = server.plugins.auth
-  const Database = server.plugins.database
   const User = Database.model('User')
 
   function loadUser (request, reply) {
     let userId = request.params.userId
     let user = User.forge({ id: userId })
       .fetch({ require: true })
-      .catch(User.NotFoundError, () => {
-        throw NotFoundError('User not found')
-      })
+      .catch(User.NotFoundError, () => Boom.notFound('User not found'))
 
     reply(user)
   }
@@ -40,6 +29,7 @@ internals.applyRoutes = (server, next) => {
     path: '/users',
     config: {
       description: 'Get list of users',
+      tags: ['api', 'users'],
       validate: {
         query: {
           filter: Joi.object({
@@ -59,14 +49,17 @@ internals.applyRoutes = (server, next) => {
       let sort = request.query.sort
       let sortOrder = request.query.sortOrder
 
-      let users = UserService.fetch(filter, {
-        sortBy: sort,
-        sortOrder: sortOrder,
-        page: page,
-        pageSize: pageSize
+      let result = Promise.props({
+        users: Users.fetch(filter, {
+          sortBy: sort,
+          sortOrder: sortOrder,
+          page: page,
+          pageSize: pageSize
+        }),
+        count: Users.count(filter)
       })
 
-      reply(users)
+      reply(result)
     }
   })
 
@@ -75,6 +68,7 @@ internals.applyRoutes = (server, next) => {
     path: '/users',
     config: {
       description: 'Create new user',
+      tags: ['api', 'users'],
       validate: {
         payload: {
           name: Joi.string(),
@@ -88,7 +82,7 @@ internals.applyRoutes = (server, next) => {
 
           let user = User.forge({ email })
             .fetch({ require: true })
-            .then((user) => BadRequestError('Email already in use.'))
+            .then((user) => Boom.badRequest('Email already in use'))
             .catch(User.NotFoundError, () => {})
 
           reply(user)
@@ -96,7 +90,7 @@ internals.applyRoutes = (server, next) => {
       }, {
         assign: 'passwordHash',
         method (request, reply) {
-          let password = AuthService.generateTokenHash()
+          let password = Auth.generateTokenHash()
             .then((token) => token.hash)
 
           reply(password)
@@ -119,7 +113,7 @@ internals.applyRoutes = (server, next) => {
       }, {
         assign: 'tokenHash',
         method (request, reply) {
-          let resetToken = AuthService.generateTokenHash()
+          let resetToken = Auth.generateTokenHash()
           reply(resetToken)
         }
       }]
@@ -129,20 +123,21 @@ internals.applyRoutes = (server, next) => {
       let tokenHash = request.pre.tokenHash
       let credentials = request.auth.credentials
 
-      let promise = user.save({ password_reset: tokenHash.hash }).then((user) => {
-        let template = 'set-password'
-        let emailOptions = {
-          subject: 'Set your password',
-          to: user.get('email')
-        }
-        let context = {
-          user: user.toJSON(),
-          credentials: credentials,
-          token: tokenHash.token,
-          url: Config.get('connection.front.uri')
-        }
-        return MailService.sendEmail(emailOptions, template, context)
-      }).return({ message: 'success' })
+      let promise = user.save({ password_reset: tokenHash.hash })
+        .tap((user) => {
+          let template = 'set-password'
+          let emailOptions = {
+            subject: 'Set your password',
+            to: user.get('email')
+          }
+          let context = {
+            user: user.toJSON(),
+            credentials: credentials,
+            token: tokenHash.token,
+            url: Config.get('connection.front.uri')
+          }
+          return Mail.sendEmail(emailOptions, template, context)
+        })
 
       reply(promise)
     }
@@ -153,6 +148,7 @@ internals.applyRoutes = (server, next) => {
     path: '/users/{userId}',
     config: {
       description: 'Get user',
+      tags: ['api', 'users'],
       validate: {
         params: {
           userId: Joi.number().integer().required()
@@ -173,6 +169,7 @@ internals.applyRoutes = (server, next) => {
     path: '/users/{userId}',
     config: {
       description: 'Delete user',
+      tags: ['api', 'users'],
       validate: {
         params: {
           userId: Joi.number().integer().required()
@@ -194,12 +191,14 @@ internals.applyRoutes = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-  next()
-}
-
 exports.register.attributes = {
   name: 'api/users',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/auth',
+    'services/mail',
+    'services/database',
+    'modules/user'
+  ]
 }
+
+module.exports = Deputy(exports)

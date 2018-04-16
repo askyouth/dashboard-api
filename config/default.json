@@ -1,7 +1,7 @@
 {
   "connection": {
     "api": {
-      "port": 4000,
+      "port": 3000,
       "uri": "http://api.dashboard.ask-project.eu"
     },
     "front": {
@@ -28,10 +28,10 @@
       },
       "migrations": {
         "tableName": "migrations",
-        "directory": "./server/database/migrations"
+        "directory": "./priv/database/migrations"
       },
       "seeds": {
-        "directory": "./server/database/seeds"
+        "directory": "./priv/database/seeds"
       }
     }
   },
@@ -46,18 +46,18 @@
       }
     },
     "fromAddress": "dashboard@ask-project.eu",
-    "templateDir": "./server/services/mail/templates"
+    "templateDir": "./priv/mail/templates"
   },
   "twitter": {
     "auth": {
-      "consumer_key":        "DqSzurHjdaqo8xaQwV5Z2jt96",
-      "consumer_secret":     "h1xj64OBU17yHmw8HRSn9slhs7auMJaogIBrYJ5ap3rGLqYP28",
-      "access_token":        "1746146112-Rkib4RtH6rqwNin1wbI7wGPzk040WON1EP4cpTn",
-      "access_token_secret": "emeJ0OOjZNyxd9wfpQBgFg4fGdm9TGsW2IXFHCcJ5UASm"
+      "consumer_key": "",
+      "consumer_secret": "",
+      "access_token": "",
+      "access_token_secret": ""
     }
   },
   "klout": {
-    "auth":     "neng5ns49v7c6fm9cf85ykc8",
+    "auth": "",
     "interval": 60000
   },
   "files": {

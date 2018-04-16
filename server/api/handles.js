@@ -3,35 +3,25 @@
 // Module dependencies.
 const Joi = require('joi')
 const Boom = require('boom')
+const Deputy = require('hapi-deputy')
 const Promise = require('bluebird')
 
-const NotFoundError = Boom.notFound
-const BadRequestError = Boom.badRequest
-
-const internals = {}
-
-internals.dependencies = [
-  'database',
-  'services/handle',
-  'services/twitter',
-  'services/klout'
-]
-
-internals.applyRoutes = (server, next) => {
-  const Klout = server.plugins['services/klout']
+exports.register = function (server, options, next) {
+  const Database = server.plugins['services/database']
   const Twitter = server.plugins['services/twitter']
-  const HandleService = server.plugins['services/handle']
-  const Database = server.plugins.database
-  const Handle = Database.model('Handle')
+  const TwitterStream = server.plugins['services/twitter/stream']
+  const Topics = server.plugins['modules/topic']
+  const Handles = server.plugins['modules/handle']
+  const Contribution = server.plugins['modules/contribution']
+
   const Topic = Database.model('Topic')
+  const Handle = Database.model('Handle')
 
   function loadHandle (request, reply) {
     let handleId = request.params.handleId
     let handle = Handle.forge({ id: handleId })
       .fetch({ require: true })
-      .catch(Handle.NotFoundError, () => {
-        throw NotFoundError('Handle not found')
-      })
+      .catch(Handle.NotFoundError, () => Boom.notFound('Handle not found'))
 
     reply(handle)
   }
@@ -40,9 +30,7 @@ internals.applyRoutes = (server, next) => {
     let topicId = request.params.topicId
     let topic = Topic.forge({ id: topicId })
       .fetch({ require: true })
-      .catch(Topic.NotFoundError, () => {
-        throw NotFoundError('Topic not found')
-      })
+      .catch(Topic.NotFoundError, () => Boom.notFound('Topic not found'))
 
     reply(topic)
   }
@@ -52,6 +40,7 @@ internals.applyRoutes = (server, next) => {
     path: '/handles',
     config: {
       description: 'Get list of handles',
+      tags: ['api', 'handles'],
       validate: {
         query: {
           filter: Joi.object({
@@ -75,15 +64,18 @@ internals.applyRoutes = (server, next) => {
       let sortOrder = request.query.sortOrder
       let related = ['camp'].concat(request.query.related)
 
-      let handles = HandleService.fetch(filter, {
-        sortBy: sort,
-        sortOrder: sortOrder,
-        page: page,
-        pageSize: pageSize,
-        withRelated: related
+      let result = Promise.props({
+        handles: Handles.fetch(filter, {
+          sortBy: sort,
+          sortOrder: sortOrder,
+          page: page,
+          pageSize: pageSize,
+          withRelated: related
+        }),
+        count: Handles.count(filter)
       })
 
-      reply(handles)
+      reply(result)
     }
   })
 
@@ -92,10 +84,12 @@ internals.applyRoutes = (server, next) => {
     path: '/handles',
     config: {
       description: 'Create new handle',
+      tags: ['api', 'handles'],
       validate: {
         payload: {
           username: Joi.string().required(),
-          camp_id: Joi.number().integer()
+          camp_id: Joi.number().integer(),
+          follow: Joi.boolean().default(true)
         }
       },
       pre: [{
@@ -105,9 +99,7 @@ internals.applyRoutes = (server, next) => {
 
           let handle = Handle.forge({ username })
             .fetch({ require: true })
-            .then((handle) => {
-              throw new BadRequestError('Handle already exist')
-            })
+            .then((handle) => Boom.badRequest('Handle already exist'))
             .catch(Handle.NotFoundError, () => {})
 
           reply(handle)
@@ -117,31 +109,19 @@ internals.applyRoutes = (server, next) => {
     handler (request, reply) {
       let username = request.payload.username
       let campId = request.payload.camp_id
+      let follow = request.payload.follow
 
-      let handle = Promise.join(
-        Twitter.getUserProfile({
-          screen_name: username,
-          include_entities: false
-        }),
-        Klout.getIdentity(username).catch((err) => {
-          if (err.message.match(/not found/i)) return {}
-          throw err
-        })
-      ).spread((twitterProfile, kloutIdentity) => {
-        return Handle.forge({
-          id: twitterProfile.id_str,
-          username: twitterProfile.screen_name,
-          name: twitterProfile.name,
-          profile: {
-            image: twitterProfile.profile_image_url_https,
-            description: twitterProfile.description
-          },
-          camp_id: campId,
-          klout_id: kloutIdentity.id
-        }).save(null, { method: 'insert' })
-      }).tap((handle) => {
-        Twitter.follow(handle.get('id'))
-      }).then((handle) => handle.refresh({ withRelated: ['camp'] }))
+      let opts = {
+        screen_name: username,
+        include_entities: false
+      }
+      let handle = Twitter.getUserProfile(opts)
+        .then((profile) => Handles.createFromTwitterProfile(profile, campId))
+        .then((handle) => handle.refresh({ withRelated: ['camp'] }))
+        .tap((handle) => Handles.addToTwitterList(handle))
+        .tap((handle) => TwitterStream.follow(handle.get('id')))
+        .tap((handle) => follow && Twitter.friendshipCreate(handle.get('id')))
+        .tap((handle) => Contribution.handleCreated(handle.toJSON()))
 
       reply(handle)
     }
@@ -152,6 +132,7 @@ internals.applyRoutes = (server, next) => {
     path: '/handles/{handleId}',
     config: {
       description: 'Get handle',
+      tags: ['api', 'handles'],
       validate: {
         params: {
           handleId: Joi.string().required()
@@ -179,6 +160,7 @@ internals.applyRoutes = (server, next) => {
     path: '/handles/{handleId}',
     config: {
       description: 'Update handle',
+      tags: ['api', 'handles'],
       validate: {
         params: {
           handleId: Joi.string().required()
@@ -210,6 +192,7 @@ internals.applyRoutes = (server, next) => {
     path: '/handles/{handleId}',
     config: {
       description: 'Delete handle',
+      tags: ['api', 'handles'],
       validate: {
         params: {
           handleId: Joi.string().required()
@@ -221,13 +204,51 @@ internals.applyRoutes = (server, next) => {
     },
     handler (request, reply) {
       let handle = request.pre.handle
+      let handleJson = handle.toJSON()
 
-      let handleId = handle.get('id')
-      let promise = handle.destroy().then(() => {
-        Twitter.unfollow(handleId)
-      })
+      let promise = Handles.removeFromTwitterList(handle)
+        .then(() => handle.destroy())
+        .tap(() => TwitterStream.unfollow(handleJson.id))
+        .tap(() => Twitter.friendshipDestroy(handleJson.id))
+        .tap(() => Contribution.handleRemoved(handleJson))
 
       reply(promise).code(204)
+    }
+  })
+
+  server.route({
+    method: 'POST',
+    path: '/handles/{handleId}/follow',
+    config: {
+      description: 'Follow user on Twitter',
+      tags: ['api', 'handles'],
+      pre: [{
+        method: loadHandle, assign: 'handle'
+      }]
+    },
+    handler (request, reply) {
+      let handle = request.pre.handle
+      let promise = Twitter.friendshipCreate(handle.get('id')).return(handle)
+
+      reply(promise)
+    }
+  })
+
+  server.route({
+    method: 'POST',
+    path: '/handles/{handleId}/unfollow',
+    config: {
+      description: 'Unfollow user on Twitter',
+      tags: ['api', 'handles'],
+      pre: [{
+        method: loadHandle, assign: 'handle'
+      }]
+    },
+    handler (request, reply) {
+      let handle = request.pre.handle
+      let promise = Twitter.friendshipDestroy(handle.get('id')).return(handle)
+
+      reply(promise)
     }
   })
 
@@ -236,9 +257,20 @@ internals.applyRoutes = (server, next) => {
     path: '/handles/{handleId}/topics',
     config: {
       description: 'Get topics related to handle',
+      tags: ['api', 'handles'],
       validate: {
         params: {
           handleId: Joi.string().required()
+        },
+        query: {
+          filter: Joi.object({
+            search: Joi.string()
+          }).default({}),
+          page: Joi.number().integer().default(1),
+          pageSize: Joi.number().integer().default(20),
+          sort: Joi.string().valid(['name']).default('name'),
+          sortOrder: Joi.string().valid(['asc', 'desc']).default('asc'),
+          related: Joi.array().items(Joi.string().valid(['handles'])).default([])
         }
       },
       pre: [{
@@ -247,9 +279,27 @@ internals.applyRoutes = (server, next) => {
     },
     handler (request, reply) {
       let handle = request.pre.handle
-      let topics = handle.related('topics').fetch()
+      let page = request.query.page
+      let pageSize = request.query.pageSize
+      let sort = request.query.sort
+      let sortOrder = request.query.sortOrder
+      let related = request.query.related
+      let filter = Object.assign({
+        handle: handle.get('id')
+      }, request.query.filter)
 
-      reply(topics)
+      let result = Promise.props({
+        topics: Topics.fetch(filter, {
+          sortBy: sort,
+          sortOrder: sortOrder,
+          page: page,
+          pageSize: pageSize,
+          withRelated: related
+        }),
+        count: Topics.count(filter)
+      })
+
+      reply(result)
     }
   })
 
@@ -258,6 +308,7 @@ internals.applyRoutes = (server, next) => {
     path: '/handles/{handleId}/topics/{topicId}',
     config: {
       description: 'Attach topic to handle',
+      tags: ['api', 'handles'],
       validate: {
         params: {
           handleId: Joi.string().required(),
@@ -284,6 +335,7 @@ internals.applyRoutes = (server, next) => {
     path: '/handles/{handleId}/topics/{topicId}',
     config: {
       description: 'Detach topic from handle',
+      tags: ['api', 'handles'],
       validate: {
         params: {
           handleId: Joi.string().required(),
@@ -306,7 +358,7 @@ internals.applyRoutes = (server, next) => {
         .then((topics) => {
           let topic = topics.shift()
           if (!topic) {
-            throw new BadRequestError('Topic not attached')
+            throw Boom.badRequest('Topic not attached')
           }
           return handle.topics().detach(topic)
         })
@@ -318,12 +370,16 @@ internals.applyRoutes = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-  next()
-}
-
 exports.register.attributes = {
   name: 'api/handles',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/database',
+    'services/twitter',
+    'services/twitter/stream',
+    'modules/topic',
+    'modules/handle',
+    'modules/contribution'
+  ]
 }
+
+module.exports = Deputy(exports)

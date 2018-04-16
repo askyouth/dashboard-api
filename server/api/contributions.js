@@ -3,29 +3,21 @@
 // Module dependencies.
 const Joi = require('joi')
 const Boom = require('boom')
+const Deputy = require('hapi-deputy')
+const Promise = require('bluebird')
 
-const NotFoundError = Boom.notFound
+exports.register = function (server, options, next) {
+  const Database = server.plugins['services/database']
+  const Contributions = server.plugins['modules/contribution']
 
-const internals = {}
-
-internals.dependencies = [
-  'database',
-  'services/contribution'
-]
-
-internals.applyRoutes = (server, next) => {
-  const Database = server.plugins.database
   const Camp = Database.model('Camp')
   const Contribution = Database.model('Contribution')
-  const ContributionService = server.plugins['services/contribution']
 
   function loadContribution (request, reply) {
     let contributionId = request.params.contributionId
     let contribution = Contribution.forge({ id: contributionId })
       .fetch({ require: true })
-      .catch(Contribution.NotFoundError, () => {
-        throw new NotFoundError('Contribution not found')
-      })
+      .catch(Contribution.NotFoundError, () => Boom.notFound('Contribution not found'))
 
     reply(contribution)
   }
@@ -35,6 +27,7 @@ internals.applyRoutes = (server, next) => {
     path: '/contributions',
     config: {
       description: 'Get list of contributions',
+      tags: ['api', 'contributions'],
       validate: {
         query: {
           filter: Joi.object({
@@ -62,15 +55,18 @@ internals.applyRoutes = (server, next) => {
       let sortOrder = request.query.sortOrder
       let related = ['tweet']
 
-      let contributions = ContributionService.fetch(filter, {
-        sortBy: sort,
-        sortOrder: sortOrder,
-        page: page,
-        pageSize: pageSize,
-        withRelated: related
+      let result = Promise.props({
+        contributions: Contributions.fetch(filter, {
+          sortBy: sort,
+          sortOrder: sortOrder,
+          page: page,
+          pageSize: pageSize,
+          withRelated: related
+        }),
+        count: Contributions.count(filter)
       })
 
-      reply(contributions)
+      reply(result)
     }
   })
 
@@ -79,6 +75,7 @@ internals.applyRoutes = (server, next) => {
     path: '/contributions/{contributionId}',
     config: {
       description: 'Get contribution',
+      tags: ['api', 'contributions'],
       validate: {
         params: {
           contributionId: Joi.number().integer().required()
@@ -103,6 +100,7 @@ internals.applyRoutes = (server, next) => {
     path: '/contributions/{contributionId}',
     config: {
       description: 'Update contribution',
+      tags: ['api', 'contributions'],
       validate: {
         payload: {
           topic_id: Joi.number().integer().allow(null)
@@ -126,12 +124,12 @@ internals.applyRoutes = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-  next()
-}
-
 exports.register.attributes = {
   name: 'api/contributions',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/database',
+    'modules/contribution'
+  ]
 }
+
+module.exports = Deputy(exports)

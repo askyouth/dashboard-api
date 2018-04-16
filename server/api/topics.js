@@ -2,19 +2,15 @@
 
 // Module dependencies.
 const Joi = require('joi')
+const Deputy = require('hapi-deputy')
+const Promise = require('bluebird')
 
-const internals = {}
+exports.register = function (server, options, next) {
+  const Database = server.plugins['services/database']
+  const TwitterStream = server.plugins['services/twitter/stream']
+  const Topics = server.plugins['modules/topic']
+  const Handles = server.plugins['modules/handle']
 
-internals.dependencies = [
-  'database',
-  'services/topic',
-  'services/twitter'
-]
-
-internals.applyRoutes = function (server, next) {
-  const Twitter = server.plugins['services/twitter']
-  const TopicService = server.plugins['services/topic']
-  const Database = server.plugins.database
   const Topic = Database.model('Topic')
 
   server.route({
@@ -22,6 +18,7 @@ internals.applyRoutes = function (server, next) {
     path: '/topics',
     config: {
       description: 'Get topics',
+      tags: ['api', 'topics'],
       validate: {
         query: {
           filter: Joi.object({
@@ -43,7 +40,7 @@ internals.applyRoutes = function (server, next) {
       let sortOrder = request.query.sortOrder
       let related = request.query.related
 
-      let topics = TopicService.fetch(filter, {
+      let topics = Topics.fetch(filter, {
         sortBy: sort,
         sortOrder: sortOrder,
         page: page,
@@ -60,6 +57,7 @@ internals.applyRoutes = function (server, next) {
     path: '/topics',
     config: {
       description: 'Create topic',
+      tags: ['api', 'topics'],
       validate: {
         payload: {
           name: Joi.string().required(),
@@ -73,7 +71,8 @@ internals.applyRoutes = function (server, next) {
 
       let topic = Topic.forge(payload).save().tap((topic) => {
         if (topic.get('keywords').length) {
-          Twitter.track(topic.get('keywords'))
+          TwitterStream.track(topic.get('keywords'))
+          Topics.created(topic.toJSON())
         }
       })
 
@@ -81,19 +80,12 @@ internals.applyRoutes = function (server, next) {
     }
   })
 
-  function loadTopic (request, reply) {
-    let topicId = request.params.topicId
-    let topic = Topic.forge({ id: topicId })
-      .fetch({ require: true })
-
-    reply(topic)
-  }
-
   server.route({
     method: 'GET',
     path: '/topics/{topicId}',
     config: {
       description: 'Get topic',
+      tags: ['api', 'topics'],
       validate: {
         params: {
           topicId: Joi.number().integer().required()
@@ -123,6 +115,7 @@ internals.applyRoutes = function (server, next) {
     path: '/topics/{topicId}',
     config: {
       description: 'Update topic',
+      tags: ['api', 'topics'],
       validate: {
         params: {
           topicId: Joi.number().integer().required()
@@ -149,10 +142,12 @@ internals.applyRoutes = function (server, next) {
       topic = topic.save().tap((topic) => {
         if (hasChangedKeywords) {
           if (previousKeywords.length) {
-            Twitter.untrack(previousKeywords)
+            TwitterStream.untrack(previousKeywords)
+            Topics.removed(topic.toJSON())
           }
           if (topic.get('keywords').length) {
-            Twitter.track(topic.get('keywords'))
+            TwitterStream.track(topic.get('keywords'))
+            Topics.created(topic.toJSON())
           }
         }
       })
@@ -166,6 +161,7 @@ internals.applyRoutes = function (server, next) {
     path: '/topics/{topicId}',
     config: {
       description: 'Remove topic',
+      tags: ['api', 'topics'],
       validate: {
         params: {
           topicId: Joi.number().integer().required()
@@ -177,11 +173,12 @@ internals.applyRoutes = function (server, next) {
     },
     handler (request, reply) {
       let topic = request.pre.topic
+      let { id, keywords } = topic.toJSON()
 
-      let keywords = topic.get('keywords')
       let promise = topic.destroy().then(() => {
         if (keywords.length) {
-          Twitter.untrack(keywords)
+          TwitterStream.untrack(keywords)
+          Topics.removed({ id, keywords })
         }
       })
 
@@ -194,9 +191,21 @@ internals.applyRoutes = function (server, next) {
     path: '/topics/{topicId}/handles',
     config: {
       description: 'Get handles related to topic',
+      tags: ['api', 'topics'],
       validate: {
         params: {
           topicId: Joi.number().integer().required()
+        },
+        query: {
+          filter: Joi.object({
+            search: Joi.string(),
+            camp: Joi.number().integer()
+          }).default({}),
+          page: Joi.number().integer().default(1),
+          pageSize: Joi.number().integer().default(20),
+          sort: Joi.string().valid(['name', 'klout_score']).default('name'),
+          sortOrder: Joi.string().valid(['asc', 'desc']).default('asc'),
+          related: Joi.array().items(Joi.string().valid(['topics'])).default([])
         }
       },
       pre: [{
@@ -205,21 +214,49 @@ internals.applyRoutes = function (server, next) {
     },
     handler (request, reply) {
       let topic = request.pre.topic
-      let handles = topic.related('handles').fetch()
+      let page = request.query.page
+      let pageSize = request.query.pageSize
+      let sort = request.query.sort
+      let sortOrder = request.query.sortOrder
+      let related = request.query.related
+      let filter = Object.assign({
+        topic: topic.get('id')
+      }, request.query.filter)
 
-      reply(handles)
+      let result = Promise.props({
+        handles: Handles.fetch(filter, {
+          sortBy: sort,
+          sortOrder: sortOrder,
+          page: page,
+          pageSize: pageSize,
+          withRelated: related
+        }),
+        count: Handles.count(filter)
+      })
+
+      reply(result)
     }
   })
 
-  next()
-}
+  function loadTopic (request, reply) {
+    let topicId = request.params.topicId
+    let topic = Topic.forge({ id: topicId })
+        .fetch({ require: true })
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
+    reply(topic)
+  }
+
   next()
 }
 
 exports.register.attributes = {
   name: 'api/topics',
-  dependecies: internals.dependencies
+  dependencies: [
+    'services/database',
+    'services/twitter/stream',
+    'modules/topic',
+    'modules/handle'
+  ]
 }
+
+module.exports = Deputy(exports)

@@ -4,34 +4,22 @@
 const Fs = require('fs')
 const Joi = require('joi')
 const Boom = require('boom')
-const NotFoundError = Boom.notFound
-const BadRequestError = Boom.badRequest
+const Deputy = require('hapi-deputy')
 
-const internals = {}
+exports.register = function (server, options, next) {
+  const File = server.plugins['services/file']
+  const Twitter = server.plugins['services/twitter']
+  const Database = server.plugins['services/database']
+  const Tweets = server.plugins['modules/tweet']
 
-internals.dependencies = [
-  'hapi-io',
-  'database',
-  'services/tweet',
-  'services/twitter',
-  'services/file'
-]
-
-internals.applyRoutes = (server, next) => {
-  const Database = server.plugins.database
   const Tweet = Database.model('Tweet')
   const Infographic = Database.model('Infographic')
-  const File = server.plugins['services/file']
-  const Tweets = server.plugins['services/tweet']
-  const Twitter = server.plugins['services/twitter']
 
   function loadTweet (request, reply) {
     let tweetId = request.params.id
     let tweet = Tweet.forge({ id: tweetId })
       .fetch({ require: true })
-      .catch(Tweet.NotFoundError, () => {
-        throw new NotFoundError('Tweet not found')
-      })
+      .catch(Tweet.NotFoundError, () => Boom.notFound('Tweet not found'))
 
     reply(tweet)
   }
@@ -41,6 +29,7 @@ internals.applyRoutes = (server, next) => {
     path: '/tweets',
     config: {
       description: 'Get tweets',
+      tags: ['api', 'tweets'],
       auth: {
         mode: 'optional'
       },
@@ -50,7 +39,7 @@ internals.applyRoutes = (server, next) => {
           userId: Joi.string(),
           topicId: Joi.number().integer(),
           limit: Joi.number().integer().default(20),
-          sortBy: Joi.string().default('created_at'),
+          sortBy: Joi.string().default('id'),
           sortOrder: Joi.string().default('desc')
         },
         options: {
@@ -77,7 +66,7 @@ internals.applyRoutes = (server, next) => {
       let socket = request.plugins['hapi-io'].socket
       if (socket) {
         socket.leaveAll()
-        if (userId) socket.join(`user:${userId}`)
+        if (userId) socket.join(`handle:${userId}`)
         else if (topicId) socket.join(`topic:${topicId}`)
         else socket.join('timeline')
       }
@@ -91,6 +80,7 @@ internals.applyRoutes = (server, next) => {
     path: '/tweets',
     config: {
       description: 'Create new tweet',
+      tags: ['api', 'tweets'],
       payload: {
         output: 'file',
         parse: true,
@@ -159,6 +149,7 @@ internals.applyRoutes = (server, next) => {
     path: '/tweets/{id}',
     config: {
       description: 'Fetch tweet',
+      tags: ['api', 'tweets'],
       validate: {
         params: {
           id: Joi.string().required()
@@ -184,6 +175,7 @@ internals.applyRoutes = (server, next) => {
     path: '/tweets/{id}/retweet',
     config: {
       description: 'Retweet tweet',
+      tags: ['api', 'tweets'],
       validate: {
         params: {
           id: Joi.string().required()
@@ -203,7 +195,7 @@ internals.applyRoutes = (server, next) => {
           // tweet deleted
           if (err.code === 144) {
             return tweet.destroy().then(() => {
-              throw new BadRequestError('Tweet deleted')
+              throw Boom.badRequest('Tweet deleted')
             })
           }
         })
@@ -218,6 +210,7 @@ internals.applyRoutes = (server, next) => {
     path: '/tweets/{id}/favorite',
     config: {
       description: 'Add tweet to favorites',
+      tags: ['api', 'tweets'],
       validate: {
         params: {
           id: Joi.string().required()
@@ -235,7 +228,7 @@ internals.applyRoutes = (server, next) => {
           // tweet deleted
           if (err.code === 144) {
             return tweet.destroy().then(() => {
-              throw new BadRequestError('Tweet deleted')
+              throw Boom.badRequest('Tweet deleted')
             })
           }
         })
@@ -250,6 +243,7 @@ internals.applyRoutes = (server, next) => {
     path: '/tweets/{id}/unfavorite',
     config: {
       description: 'Remove tweet from favorites',
+      tags: ['api', 'tweets'],
       validate: {
         params: {
           id: Joi.string().required()
@@ -267,7 +261,7 @@ internals.applyRoutes = (server, next) => {
           // tweet deleted
           if (err.code === 144) {
             return tweet.destroy().then(() => {
-              throw new BadRequestError('Tweet deleted')
+              throw Boom.badRequest('Tweet deleted')
             })
           }
         })
@@ -280,12 +274,15 @@ internals.applyRoutes = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-  next()
-}
-
 exports.register.attributes = {
   name: 'api/interactions',
-  dependencies: internals.dependencies
+  dependencies: [
+    'hapi-io',
+    'services/file',
+    'services/twitter',
+    'services/database',
+    'modules/tweet'
+  ]
 }
+
+module.exports = Deputy(exports)

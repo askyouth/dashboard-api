@@ -3,40 +3,32 @@
 // Module dependencies.
 const Joi = require('joi')
 const Boom = require('boom')
-const Errors = require('../errors')
+const Deputy = require('hapi-deputy')
 const Promise = require('bluebird')
 const _ = require('lodash')
 
-const AuthenticationError = Errors.AuthenticationError
+exports.register = function (server, options, next) {
+  const Auth = server.plugins['services/auth']
+  const Database = server.plugins['services/database']
+  const Handles = server.plugins['modules/handle']
+  const Contributions = server.plugins['modules/contribution']
 
-const internals = {}
-
-internals.dependencies = [
-  'database',
-  'auth',
-  'services/handle'
-]
-
-internals.applyRoutes = (server, next) => {
-  const Auth = server.plugins.auth
-  const Handle = server.plugins['services/handle']
-  const Contribution = server.plugins['services/contribution']
-  const Database = server.plugins.database
   const User = Database.model('User')
   const Camp = Database.model('Camp')
 
   server.route({
     method: 'GET',
-    path: '/account',
+    path: '/profile',
     config: {
-      description: 'Get account information and system stats'
+      description: 'Get profile information and system stats',
+      tags: ['api', 'account']
     },
     handler (request, reply) {
       let data = Promise.props({
-        handle: Handle.fetch({ camp: Camp.BROKER }),
-        youthHandles: Handle.count({ camp: Camp.YOUTH }),
-        policyMakerHandles: Handle.count({ camp: Camp.POLICY_MAKER }),
-        contributions: Contribution.count()
+        handle: Handles.fetch({ camp: Camp.BROKER }),
+        youthHandles: Handles.count({ camp: Camp.YOUTH }),
+        policyMakerHandles: Handles.count({ camp: Camp.POLICY_MAKER }),
+        contributions: Contributions.count()
       })
 
       reply(data)
@@ -48,6 +40,7 @@ internals.applyRoutes = (server, next) => {
     path: '/profile',
     config: {
       description: 'Update account',
+      tags: ['api', 'account'],
       validate: {
         payload: Joi.object({
           name: Joi.string(),
@@ -73,7 +66,7 @@ internals.applyRoutes = (server, next) => {
           let currentPassword = request.payload.currentPassword
 
           let promise = Auth.authenticate(user, currentPassword)
-            .catch(AuthenticationError, () => Boom.badRequest('Invalid password'))
+            .catch(Auth.AuthenticationError, () => Boom.badRequest('Invalid password'))
 
           reply(promise)
         }
@@ -101,12 +94,14 @@ internals.applyRoutes = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-  next()
-}
-
 exports.register.attributes = {
   name: 'api/account',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/auth',
+    'services/database',
+    'modules/handle',
+    'modules/contribution'
+  ]
 }
+
+module.exports = Deputy(exports)

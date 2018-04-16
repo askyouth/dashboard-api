@@ -3,22 +3,20 @@
 // Module dependencies.
 const Joi = require('joi')
 const Boom = require('boom')
+const Deputy = require('hapi-deputy')
 
-const internals = {}
-
-internals.dependencies = ['database', 'services/file']
-
-internals.applyRoutes = (server, next) => {
-  const Database = server.plugins.database
-  const Infographic = Database.model('Infographic')
+exports.register = function (server, options, next) {
   const File = server.plugins['services/file']
+  const Database = server.plugins['services/database']
+
+  const Infographic = Database.model('Infographic')
 
   function loadInfographic (request, reply) {
     let infographicId = request.params.infographicId
 
     let infographic = Infographic.forge({ id: infographicId })
       .fetch({ require: true })
-      .catch(Infographic.NotFoundError, () => Boom.notFound())
+      .catch(Infographic.NotFoundError, () => Boom.notFound('Infographic not found'))
 
     reply(infographic)
   }
@@ -28,6 +26,7 @@ internals.applyRoutes = (server, next) => {
     path: '/infographics',
     config: {
       description: 'Get list of infographics',
+      tags: ['api', 'infographics'],
       validate: {
         query: {
           filter: Joi.object({
@@ -67,7 +66,8 @@ internals.applyRoutes = (server, next) => {
     method: 'GET',
     path: '/infographics/archive',
     config: {
-      description: 'Get infographics archive by month'
+      description: 'Get infographics archive by month',
+      tags: ['api', 'infographics']
     },
     handler (request, reply) {
       let result = Database.knex('infographic')
@@ -85,6 +85,7 @@ internals.applyRoutes = (server, next) => {
     path: '/infographics',
     config: {
       description: 'Create new infographic',
+      tags: ['api', 'infographics'],
       payload: {
         output: 'stream',
         parse: true,
@@ -116,6 +117,7 @@ internals.applyRoutes = (server, next) => {
     path: '/infographics/{infographicId}',
     config: {
       description: 'Get infographic',
+      tags: ['api', 'infographics'],
       validate: {
         params: {
           infographicId: Joi.number().integer().required()
@@ -137,6 +139,7 @@ internals.applyRoutes = (server, next) => {
     path: '/infographics/{infographicId}/download',
     config: {
       description: 'Download infographic',
+      tags: ['api', 'infographics'],
       pre: [{
         assign: 'infographic',
         method: loadInfographic
@@ -157,6 +160,7 @@ internals.applyRoutes = (server, next) => {
     path: '/infographics/{infographicId}',
     config: {
       description: 'Delete infographic',
+      tags: ['api', 'infographics'],
       validate: {
         params: {
           infographicId: Joi.number().integer().required()
@@ -182,6 +186,7 @@ internals.applyRoutes = (server, next) => {
     path: '/{param*}',
     config: {
       description: 'Serve static content',
+      tags: ['api'],
       auth: false
     },
     handler: {
@@ -194,11 +199,12 @@ internals.applyRoutes = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-  next()
+exports.register.attributes = {
+  name: 'api/infographics',
+  dependencies: [
+    'services/file',
+    'services/database'
+  ]
 }
 
-exports.register.attributes = {
-  name: 'api/infographics'
-}
+module.exports = Deputy(exports)

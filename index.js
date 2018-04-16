@@ -1,11 +1,14 @@
 'use strict'
 
 // Module dependencies.
-const Glue = require('glue')
-const Manifest = require('./manifest')
+const Composer = require('./server')
 
-const composeOptions = {
-  relativeTo: __dirname
-}
+Composer((err, server) => {
+  if (err) {
+    throw err
+  }
 
-module.exports = Glue.compose.bind(Glue, Manifest.get('/'), composeOptions)
+  server.start(() => {
+    console.log('Dashboard started on port %s in %s mode', server.info.port, process.env.NODE_ENV)
+  })
+})

@@ -60,3 +60,6 @@ jspm_packages
 .tern-project
 
 public/uploads
+
+# dotenv
+.env

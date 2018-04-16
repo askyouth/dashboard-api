@@ -4,26 +4,22 @@
 const Joi = require('joi')
 const Boom = require('boom')
 const Config = require('config')
-const Errors = require('../errors')
+const Deputy = require('hapi-deputy')
 
-const AuthenticationError = Errors.AuthenticationError
-const PasswordRecoveryError = Errors.PasswordRecoveryError
-
-const internals = {}
-
-internals.dependencies = ['database', 'auth', 'services/mail']
-
-internals.applyRoutes = (server, next) => {
-  const Auth = server.plugins.auth
-  const Database = server.plugins.database
-  const User = Database.model('User')
+exports.register = function (server, options, next) {
+  const Auth = server.plugins['services/auth']
   const Mail = server.plugins['services/mail']
+  const Database = server.plugins['services/database']
+  const Settings = server.plugins['modules/settings']
+
+  const User = Database.model('User')
 
   server.route({
     method: 'POST',
     path: '/signup',
     config: {
       description: 'Create user account',
+      tags: ['api', 'auth'],
       auth: false,
       validate: {
         payload: {
@@ -34,13 +30,23 @@ internals.applyRoutes = (server, next) => {
         }
       },
       pre: [{
+        assign: 'signupEnabled',
+        method (request, reply) {
+          let promise = Settings.getValue('signup.enabled').then((enabled) => {
+            if (!enabled) {
+              return Boom.forbidden('Signup is disabled')
+            }
+          })
+          reply(promise)
+        }
+      }, {
         assign: 'emailCheck',
         method (request, reply) {
           let email = request.payload.email
 
           let user = User.forge({ email: email })
             .fetch({ require: true })
-            .then((user) => Boom.conflict('Email already in use.'))
+            .then((user) => Boom.conflict('Email already in use'))
             .catch(User.NotFoundError, () => {})
 
           reply(user)
@@ -106,6 +112,7 @@ internals.applyRoutes = (server, next) => {
     path: '/login',
     config: {
       description: 'Log in',
+      tags: ['api', 'auth'],
       auth: false,
       validate: {
         payload: {
@@ -132,7 +139,7 @@ internals.applyRoutes = (server, next) => {
 
           let promise = Auth.authenticate(user, password)
             .then(() => user.save({ last_login_at: new Date() }))
-            .catch(AuthenticationError, () => Boom.unauthorized())
+            .catch(Auth.AuthenticationError, () => Boom.unauthorized())
 
           reply(promise)
         }
@@ -173,6 +180,7 @@ internals.applyRoutes = (server, next) => {
     path: '/logout',
     config: {
       description: 'Destroy session',
+      tags: ['api', 'auth'],
       auth: {
         mode: 'try',
         strategy: 'jwt'
@@ -196,6 +204,7 @@ internals.applyRoutes = (server, next) => {
     path: '/login/forgot',
     config: {
       description: 'Generate new password reset hash',
+      tags: ['api', 'auth'],
       auth: false,
       validate: {
         payload: {
@@ -249,6 +258,7 @@ internals.applyRoutes = (server, next) => {
     path: '/login/reset',
     config: {
       description: 'Reset user password',
+      tags: ['api', 'auth'],
       auth: false,
       validate: {
         payload: {
@@ -265,7 +275,7 @@ internals.applyRoutes = (server, next) => {
 
           let user = User.forge({ id: userId })
             .fetch({ require: true })
-            .catch(User.NotFoundError, () => Boom.notFound())
+            .catch(User.NotFoundError, () => Boom.badRequest())
 
           reply(user)
         }
@@ -276,7 +286,7 @@ internals.applyRoutes = (server, next) => {
           let token = request.payload.token
 
           let promise = Auth.validateTokenHash(user, token)
-            .catch(PasswordRecoveryError, () => Boom.badRequest('Invalid token.'))
+            .catch(Auth.PasswordRecoveryError, () => Boom.badRequest())
 
           reply(promise)
         }
@@ -337,12 +347,14 @@ internals.applyRoutes = (server, next) => {
   next()
 }
 
-exports.register = function (server, options, next) {
-  server.dependency(internals.dependencies, internals.applyRoutes)
-  next()
-}
-
 exports.register.attributes = {
   name: 'api/auth',
-  dependencies: internals.dependencies
+  dependencies: [
+    'services/auth',
+    'services/mail',
+    'services/database',
+    'modules/settings'
+  ]
 }
+
+module.exports = Deputy(exports)
