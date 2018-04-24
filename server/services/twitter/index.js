@@ -102,6 +102,14 @@ exports.register = function (server, options, next) {
     return twitter.postAsync('statuses/lookup', params)
   }
 
+  function filterFollowingIds (ids = []) {
+    return twitter.postAsync('users/lookup', { user_id: ids.join(',') })
+      .then((users) => users
+        .filter((u) => u.following)
+        .map((u) => u.id_str)
+      )
+  }
+
   function getUsingCursor (path, params, prop) {
     let data = []
     let done = function (result) {
@@ -127,6 +135,7 @@ exports.register = function (server, options, next) {
   server.expose('friendshipCreate', friendshipCreate)
   server.expose('friendshipDestroy', friendshipDestroy)
   server.expose('statusesLookup', statusesLookup)
+  server.expose('filterFollowingIds', filterFollowingIds)
 
   server.expose('TwitterError', Twitter.TwitterError)
 

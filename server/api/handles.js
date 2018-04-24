@@ -73,6 +73,15 @@ exports.register = function (server, options, next) {
           withRelated: related
         }),
         count: Handles.count(filter)
+      }).then((result) => {
+        let handleIds = result.handles.toArray().splice(0, 100).map((h) => h.id)
+        let following = Twitter.filterFollowingIds(handleIds)
+        return Promise.props({ ...result, following })
+      }).then(({ handles, count, following }) => {
+        handles.forEach((handle) => {
+          handle.set('following', following.includes(handle.id))
+        })
+        return { handles, count }
       })
 
       reply(result)
