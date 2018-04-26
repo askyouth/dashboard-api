@@ -75,7 +75,7 @@ exports.register = function (server, options, next) {
         count: Handles.count(filter)
       }).then((result) => {
         let handleIds = result.handles.toArray().splice(0, 100).map((h) => h.id)
-        let following = Twitter.filterFollowingIds(handleIds)
+        let following = handleIds.length && Twitter.filterFollowingIds(handleIds)
         return Promise.props({ ...result, following })
       }).then(({ handles, count, following }) => {
         handles.forEach((handle) => {
