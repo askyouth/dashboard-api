@@ -58,7 +58,7 @@
   },
   "klout": {
     "auth": "",
-    "interval": 60000
+    "interval": 0
   },
   "files": {
     "strategy": "local",
